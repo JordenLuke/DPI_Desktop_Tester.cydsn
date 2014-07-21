@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 1   
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE MAIN
@@ -22,7 +22,7 @@ line level    source
   11          */
   12          #include <project.h>
   13          #include <stdio.h>
-  14          #define HMC5883L_Address 0x1E //used to mark read address
+  14          #define HMC5883L_Address 0x0E //used to mark read address
   15          //used to hold the x y z  data from the sensors
   16          struct XYZ_Cord{
   17                  int16 x;
@@ -62,7 +62,7 @@ line level    source
   51          void Self_Test(void);
   52          void LIS331HH_Config();
   53          void HMC5883L_Config();
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 2   
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 2   
 
   54          void Initialization();
   55          void get_LIS331HH_Data(union LIS331HH *Data);
@@ -126,7 +126,7 @@ line level    source
  111   1              LIS331HH_SPI_WriteTxData(CTRL_REG1);
  112   1              LIS331HH_SPI_WriteTxData(0x37); //normal mode, 1000HZ, xyz-enabled
  113   1              CS_Write(1);
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 3   
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 3   
 
  114   1              CyDelay(100);
  115   1              /* Setup CTRL_REG2
@@ -184,177 +184,187 @@ line level    source
  167          {
  168   1              uint8 slave= 0x1E;
  169   1              uint8 array[2];
- 170   1              array [0] = 0x0;
- 171   1              i2c_write(0x2,array,1);
+ 170   1              array [0] = 0x80;
+ 171   1              i2c_write(0x11,array,1);
  172   1              
- 173   1      //      HMC5883L_I2C_MasterClearStatus();
- 174   1      //      
- 175   1      //      array[REG_ADDRESS] = 0x02u;
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 4   
+ 173   1              array [0] = 1;
+ 174   1              i2c_write(0x10,array,1);
+ 175   1      
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 4   
 
- 176   1      //      array[COMMAD] = 0x00u; //continuous measurment mode
+ 176   1      //      HMC5883L_I2C_MasterClearStatus();
  177   1      //      
- 178   1      //      HMC5883L_I2C_MasterSendStart(slave,0u);
- 179   1      //      HMC5883L_I2C_MasterWriteByte(array[REG_ADDRESS]);
- 180   1      //      HMC5883L_I2C_MasterWriteByte(array[COMMAD]);
- 181   1      //      HMC5883L_I2C_MasterSendStop();
- 182   1      //      CyDelay(10);
- 183   1      ////    array[REG_ADDRESS] = 0x10u;
- 184   1      ////    array[COMMAD] = 0x3u;
- 185   1      ////    HMC5883L_I2C_MasterSendStart(0x0E,0u);
- 186   1      ////    HMC5883L_I2C_MasterWriteByte(array[REG_ADDRESS]);
- 187   1      ////    HMC5883L_I2C_MasterWriteByte(array[COMMAD]);
- 188   1      ////    HMC5883L_I2C_MasterSendStop();
- 189   1      ////    CyDelay(10);
- 190   1      }
- 191          void get_LIS331HH_Data(union LIS331HH *Data)
- 192          {
- 193   1              
- 194   1              CS_Write(0);
- 195   1              CyDelay(10);
- 196   1              LIS331HH_SPI_WriteTxData(0xE8);//read bit | consecutive measure bit | 0x28 = 0xe8       
- 197   1              LIS331HH_SPI_WriteTxData(0x00);
- 198   1              Data->array[1] = LIS331HH_SPI_ReadRxData();
- 199   1              LIS331HH_SPI_WriteTxData(0x00);
- 200   1              Data->array[0] = LIS331HH_SPI_ReadRxData();
- 201   1              LIS331HH_SPI_WriteTxData(0x00);
- 202   1              Data->array[3] = LIS331HH_SPI_ReadRxData();
- 203   1              LIS331HH_SPI_WriteTxData(0x00);
- 204   1              Data->array[2] = LIS331HH_SPI_ReadRxData();
- 205   1              LIS331HH_SPI_WriteTxData(0x00);
- 206   1              Data->array[5] = LIS331HH_SPI_ReadRxData();
- 207   1              LIS331HH_SPI_WriteTxData(0x00);
- 208   1              Data->array[4] = LIS331HH_SPI_ReadRxData();
- 209   1              CS_Write(1);
- 210   1              CyDelay(100);
- 211   1      }
- 212          void get_HMC5883L_Data(union HMC5883L *Data)
- 213          {
- 214   1      //      HMC5883L_I2C_MasterClearStatus();
- 215   1      //      HMC5883L_I2C_MasterSendStart(HMC5883L_Address,0); //could throw error here
- 216   1      //      HMC5883L_I2C_MasterWriteByte(0x03); //could throw error here //select register 3, X MSB register
- 217   1      //      HMC5883L_I2C_MasterSendStop();
- 218   1              uint8 array[6];
- 219   1              
- 220   1              
- 221   1              i2c_read(0x03,array,6);
+ 178   1      //      array[REG_ADDRESS] = 0x02u;
+ 179   1      //      array[COMMAD] = 0x00u; //continuous measurment mode
+ 180   1      //      
+ 181   1      //      HMC5883L_I2C_MasterSendStart(slave,0u);
+ 182   1      //      HMC5883L_I2C_MasterWriteByte(array[REG_ADDRESS]);
+ 183   1      //      HMC5883L_I2C_MasterWriteByte(array[COMMAD]);
+ 184   1      //      HMC5883L_I2C_MasterSendStop();
+ 185   1      //      CyDelay(10);
+ 186   1      ////    array[REG_ADDRESS] = 0x10u;
+ 187   1      ////    array[COMMAD] = 0x3u;
+ 188   1      ////    HMC5883L_I2C_MasterSendStart(0x0E,0u);
+ 189   1      ////    HMC5883L_I2C_MasterWriteByte(array[REG_ADDRESS]);
+ 190   1      ////    HMC5883L_I2C_MasterWriteByte(array[COMMAD]);
+ 191   1      ////    HMC5883L_I2C_MasterSendStop();
+ 192   1      ////    CyDelay(10);
+ 193   1      }
+ 194          void get_LIS331HH_Data(union LIS331HH *Data)
+ 195          {
+ 196   1              
+ 197   1              CS_Write(0);
+ 198   1              CyDelay(10);
+ 199   1              LIS331HH_SPI_WriteTxData(0xE8);//read bit | consecutive measure bit | 0x28 = 0xe8       
+ 200   1              LIS331HH_SPI_WriteTxData(0x00);
+ 201   1              Data->array[1] = LIS331HH_SPI_ReadRxData();
+ 202   1              LIS331HH_SPI_WriteTxData(0x00);
+ 203   1              Data->array[0] = LIS331HH_SPI_ReadRxData();
+ 204   1              LIS331HH_SPI_WriteTxData(0x00);
+ 205   1              Data->array[3] = LIS331HH_SPI_ReadRxData();
+ 206   1              LIS331HH_SPI_WriteTxData(0x00);
+ 207   1              Data->array[2] = LIS331HH_SPI_ReadRxData();
+ 208   1              LIS331HH_SPI_WriteTxData(0x00);
+ 209   1              Data->array[5] = LIS331HH_SPI_ReadRxData();
+ 210   1              LIS331HH_SPI_WriteTxData(0x00);
+ 211   1              Data->array[4] = LIS331HH_SPI_ReadRxData();
+ 212   1              CS_Write(1);
+ 213   1              CyDelay(100);
+ 214   1      }
+ 215          void get_HMC5883L_Data(union HMC5883L *Data)
+ 216          {
+ 217   1      //      HMC5883L_I2C_MasterClearStatus();
+ 218   1      //      HMC5883L_I2C_MasterSendStart(HMC5883L_Address,0); //could throw error here
+ 219   1      //      HMC5883L_I2C_MasterWriteByte(0x03); //could throw error here //select register 3, X MSB register
+ 220   1      //      HMC5883L_I2C_MasterSendStop();
+ 221   1              uint8 array[6];
  222   1              
- 223   1              Data->array[0] =  array[0];
- 224   1              Data->array[1] =  array[1];
- 225   1              Data->array[2] =  array[2];
- 226   1              Data->array[3] =  array[3];
- 227   1              Data->array[4] =  array[4];
- 228   1              Data->array[5] =  array[5];
- 229   1      //      HMC5883L_I2C_MasterClearStatus();
- 230   1      //      HMC5883L_I2C_MasterSendStart(HMC5883L_Address,1);
- 231   1      //      Data->array[0]=HMC5883L_I2C_MasterReadByte(1);
- 232   1      //      Data->array[1]=HMC5883L_I2C_MasterReadByte(1);
- 233   1      //      Data->array[2]=HMC5883L_I2C_MasterReadByte(1);
- 234   1      //      Data->array[3]=HMC5883L_I2C_MasterReadByte(1);
- 235   1      //      Data->array[4]=HMC5883L_I2C_MasterReadByte(1);
- 236   1      //      Data->array[5]=HMC5883L_I2C_MasterReadByte(0);
- 237   1              
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 5   
+ 223   1              
+ 224   1              i2c_read(0x03,array,6);
+ 225   1              
+ 226   1              Data->array[0] =  array[0];
+ 227   1              Data->array[1] =  array[1];
+ 228   1              Data->array[2] =  array[2];
+ 229   1              Data->array[3] =  array[3];
+ 230   1              Data->array[4] =  array[4];
+ 231   1              Data->array[5] =  array[5];
+ 232   1      //      HMC5883L_I2C_MasterClearStatus();
+ 233   1      //      HMC5883L_I2C_MasterSendStart(HMC5883L_Address,1);
+ 234   1      //      Data->array[0]=HMC5883L_I2C_MasterReadByte(1);
+ 235   1      //      Data->array[1]=HMC5883L_I2C_MasterReadByte(1);
+ 236   1      //      Data->array[2]=HMC5883L_I2C_MasterReadByte(1);
+ 237   1      //      Data->array[3]=HMC5883L_I2C_MasterReadByte(1);
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 5   
 
- 238   1      }
- 239          void menu()
- 240          {
- 241   1              CONFIG_COM_PutString("Welcome to the Desktop Tester Configuration & Testering Tool \n");
- 242   1              CONFIG_COM_PutString("Menu:\n");
- 243   1              CONFIG_COM_PutString("1: Test Acclermeter \n");
- 244   1              CONFIG_COM_PutString("2: Test Magnetmeter \n");
- 245   1              CONFIG_COM_PutString("3: Read Acclermeter \n");
- 246   1              CONFIG_COM_PutString("4: Read Magnetmere \n");
- 247   1              CONFIG_COM_PutString("5: Configuration \n");
- 248   1      }
- 249          void get_All_data(uint8 *array)
- 250          {
- 251   1              //union LIS331HH *LIS331HH_Data;
- 252   1              union HMC5883L *HMC5883L_Data;
- 253   1              
- 254   1              //get_LIS331HH_Data(LIS331HH_Data);
- 255   1              //memcpy(array,LIS331HH_Data->array, 3 * sizeof(uint8)); //copies the Accelerometer data into the array
- 256   1              get_HMC5883L_Data(HMC5883L_Data);
- 257   1              memcpy(array + 6, HMC5883L_Data->array, 6 * sizeof(uint8)); // copies the magnetormeter data into the arr
+ 238   1      //      Data->array[4]=HMC5883L_I2C_MasterReadByte(1);
+ 239   1      //      Data->array[5]=HMC5883L_I2C_MasterReadByte(0);
+ 240   1              
+ 241   1      }
+ 242          void menu()
+ 243          {
+ 244   1              CONFIG_COM_PutString("Welcome to the Desktop Tester Configuration & Testering Tool \n");
+ 245   1              CONFIG_COM_PutString("Menu:\n");
+ 246   1              CONFIG_COM_PutString("1: Test Acclermeter \n");
+ 247   1              CONFIG_COM_PutString("2: Test Magnetmeter \n");
+ 248   1              CONFIG_COM_PutString("3: Read Acclermeter \n");
+ 249   1              CONFIG_COM_PutString("4: Read Magnetmere \n");
+ 250   1              CONFIG_COM_PutString("5: Configuration \n");
+ 251   1      }
+ 252          void get_All_data(uint8 *array)
+ 253          {
+ 254   1              //union LIS331HH *LIS331HH_Data;
+ 255   1              union HMC5883L *HMC5883L_Data;
+ 256   1              
+ 257   1              //get_LIS331HH_Data(LIS331HH_Data);
+ 258   1              //memcpy(array,LIS331HH_Data->array, 3 * sizeof(uint8)); //copies the Accelerometer data into the array
+ 259   1              get_HMC5883L_Data(HMC5883L_Data);
+ 260   1              memcpy(array + 6, HMC5883L_Data->array, 6 * sizeof(uint8)); // copies the magnetormeter data into the arr
              -ay 
- 258   1      }
- 259          uint8 i2c_write(uint8 subAddr, uint8 *buffer, uint8 buff_size) {
- 260   1      
- 261   1              int i;
- 262   1              uint8 status;
+ 261   1      }
+ 262          uint8 i2c_write(uint8 subAddr, uint8 *buffer, uint8 buff_size) {
  263   1      
- 264   1              HMC5883L_I2C_MasterClearStatus();
- 265   1      
- 266   1              
- 267   1              //Set subaddr
- 268   1              status = HMC5883L_I2C_MasterSendStart(HMC5883L_Address, 0);
- 269   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 270   2                      
- 271   2                      return status;
- 272   2              }
- 273   1         
- 274   1           
- 275   1              status = HMC5883L_I2C_MasterWriteByte(subAddr);
- 276   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 277   2                      return status;
- 278   2              }
- 279   1                     
- 280   1              for (i=0;i<buff_size;i++) {
- 281   2                      status = HMC5883L_I2C_MasterWriteByte(buffer[0]);
- 282   2                      if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 283   3                              return status;
- 284   3                      }
- 285   2              }
- 286   1                        
- 287   1                      status = HMC5883L_I2C_MasterSendStop();
- 288   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 289   2                      return status;
- 290   2              }   
- 291   1              return status;
- 292   1      }
- 293          uint8 i2c_read(uint8 subAddr, uint8 *buffer, uint8 buff_size) {
- 294   1      
- 295   1              uint8 status;
- 296   1              int i;
- 297   1              char array[10];
- 298   1              
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 6   
+ 264   1              int i;
+ 265   1              uint8 status;
+ 266   1              char array[10];
+ 267   1              HMC5883L_I2C_MasterClearStatus();
+ 268   1      
+ 269   1              
+ 270   1              //Set subaddr
+ 271   1              status = HMC5883L_I2C_MasterSendStart(HMC5883L_Address, 0);
+ 272   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 273   2                      i= sprintf(array, "1: %d",status);
+ 274   2                      DATA_COM_PutArray(array,i);
+ 275   2                      return status;
+ 276   2              }
+ 277   1         
+ 278   1           
+ 279   1              status = HMC5883L_I2C_MasterWriteByte(subAddr);
+ 280   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 281   2                      i= sprintf(array, "2: %d",status);
+ 282   2                      DATA_COM_PutArray(array,i);
+ 283   2                      return status;
+ 284   2              }
+ 285   1                     
+ 286   1              for (i=0;i<buff_size;i++) {
+ 287   2                      status = HMC5883L_I2C_MasterWriteByte(buffer[i]);
+ 288   2                      if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 289   3                              return status;
+ 290   3                              i= sprintf(array, "3: %d",status);
+ 291   3                      DATA_COM_PutArray(array,i);
+ 292   3                      }
+ 293   2              }
+ 294   1                        
+ 295   1                      status = HMC5883L_I2C_MasterSendStop();
+ 296   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 297   2                      return status;
+ 298   2                      i= sprintf(array, "4: %d",status);
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 6   
 
- 299   1              HMC5883L_I2C_MasterClearStatus();
- 300   1      DATA_COM_PutString("make it here?  \n"); 
- 301   1              //Set subaddr
- 302   1              status = HMC5883L_I2C_MasterSendStart(HMC5883L_Address, 0);
- 303   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 304   2                      i= sprintf(array, "X: %d",status);
- 305   2                      DATA_COM_PutArray(array,i);
- 306   2                      return status;
- 307   2              }
- 308   1              DATA_COM_PutString("make it here?  \n");        
- 309   1              buffer[0] = HMC5883L_I2C_MasterReadByte(0);
- 310   1                         
- 311   1              status = HMC5883L_I2C_MasterWriteByte(subAddr);
- 312   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 313   2                      return status;
- 314   2              }
- 315   1                     
- 316   1              status = HMC5883L_I2C_MasterSendRestart(HMC5883L_Address, 1);
- 317   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 318   2                      return status;
- 319   2              }               
- 320   1                     
- 321   1              for (i=0;i<buff_size;i++) {
- 322   2                      buffer[i] = HMC5883L_I2C_MasterReadByte( (i<(buff_size-1) ) );
- 323   2              }
- 324   1       
- 325   1              status = HMC5883L_I2C_MasterSendStop();
- 326   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
- 327   2              return status;
- 328   2              }  
- 329   1              return 0;
- 330   1      }
- 331          
- 332          /* [] END OF FILE */
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 7   
+ 299   2                      DATA_COM_PutArray(array,i);
+ 300   2              }   
+ 301   1              return status;
+ 302   1      }
+ 303          uint8 i2c_read(uint8 subAddr, uint8 *buffer, uint8 buff_size) {
+ 304   1      
+ 305   1              uint8 status;
+ 306   1              int i;
+ 307   1              char array[10];
+ 308   1              
+ 309   1              HMC5883L_I2C_MasterClearStatus();
+ 310   1      DATA_COM_PutString("make it here?  \n"); 
+ 311   1              //Set subaddr
+ 312   1              status = HMC5883L_I2C_MasterSendStart(HMC5883L_Address, 0);
+ 313   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 314   2                      i= sprintf(array, "X: %d",status);
+ 315   2                      DATA_COM_PutArray(array,i);
+ 316   2                      return status;
+ 317   2              }
+ 318   1              DATA_COM_PutString("make it here?  \n");        
+ 319   1              buffer[0] = HMC5883L_I2C_MasterReadByte(0);
+ 320   1                         
+ 321   1              status = HMC5883L_I2C_MasterWriteByte(subAddr);
+ 322   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 323   2                      return status;
+ 324   2              }
+ 325   1                     
+ 326   1              status = HMC5883L_I2C_MasterSendRestart(HMC5883L_Address, 1);
+ 327   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 328   2                      return status;
+ 329   2              }               
+ 330   1                     
+ 331   1              for (i=0;i<buff_size;i++) {
+ 332   2                      buffer[i] = HMC5883L_I2C_MasterReadByte( (i<(buff_size-1) ) );
+ 333   2              }
+ 334   1       
+ 335   1              status = HMC5883L_I2C_MasterSendStop();
+ 336   1              if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+ 337   2              return status;
+ 338   2              }  
+ 339   1              return 0;
+ 340   1      }
+ 341          
+ 342          /* [] END OF FILE */
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 7   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -418,7 +428,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 004D C001              PUSH    AR1
 004F 7BFF              MOV     R3,#0FFH
 0051 7A00        R     MOV     R2,#HIGH ?SC_8
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 8   
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 8   
 
 0053 7900        R     MOV     R1,#LOW ?SC_8
 0055 900000      E     MOV     DPTR,#?_sprintf?BYTE+03H
@@ -482,7 +492,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 00AA AD07              MOV     R5,AR7
 00AC 120000      E     LCALL   _DATA_COM_PutArray
                                            ; SOURCE LINE # 87
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 9   
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 9   
 
 00AF 020000      R     LJMP    ?C0001
 00B2 22                RET     
@@ -546,7 +556,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 002A 7F00              MOV     R7,#00H
 002C 120000      E     LCALL   _CS_Write
                                            ; SOURCE LINE # 119
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 10  
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 10  
 
 002F 7F01              MOV     R7,#01H
 0031 7E00              MOV     R6,#00H
@@ -610,7 +620,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 163
 0098 7F01              MOV     R7,#01H
 009A 120000      E     LCALL   _CS_Write
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 11  
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 11  
 
                                            ; SOURCE LINE # 164
 009D 7F64              MOV     R7,#064H
@@ -631,42 +641,57 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0005 F0                MOVX    @DPTR,A
                                            ; SOURCE LINE # 170
 0006 900000      R     MOV     DPTR,#array
-0009 E4                CLR     A
-000A F0                MOVX    @DPTR,A
+0009 7480              MOV     A,#080H
+000B F0                MOVX    @DPTR,A
                                            ; SOURCE LINE # 171
-000B 7B01              MOV     R3,#01H
-000D 7A00        R     MOV     R2,#HIGH array
-000F 7900        R     MOV     R1,#LOW array
-0011 900000      R     MOV     DPTR,#?_i2c_write?BYTE+04H
-0014 7401              MOV     A,#01H
-0016 F0                MOVX    @DPTR,A
-0017 7F02              MOV     R7,#02H
-0019 120000      R     LCALL   _i2c_write
-                                           ; SOURCE LINE # 190
-001C 22                RET     
+000C 7B01              MOV     R3,#01H
+000E 7A00        R     MOV     R2,#HIGH array
+0010 7900        R     MOV     R1,#LOW array
+0012 900000      R     MOV     DPTR,#?_i2c_write?BYTE+04H
+0015 7401              MOV     A,#01H
+0017 F0                MOVX    @DPTR,A
+0018 7F11              MOV     R7,#011H
+001A 120000      R     LCALL   _i2c_write
+                                           ; SOURCE LINE # 173
+001D 900000      R     MOV     DPTR,#array
+0020 7401              MOV     A,#01H
+0022 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 174
+0023 7B01              MOV     R3,#01H
+0025 7A00        R     MOV     R2,#HIGH array
+0027 7900        R     MOV     R1,#LOW array
+0029 900000      R     MOV     DPTR,#?_i2c_write?BYTE+04H
+002C 7401              MOV     A,#01H
+002E F0                MOVX    @DPTR,A
+002F 7F10              MOV     R7,#010H
+0031 120000      R     LCALL   _i2c_write
+                                           ; SOURCE LINE # 193
+0034 22                RET     
              ; FUNCTION HMC5883L_Config (END)
 
              ; FUNCTION _get_LIS331HH_Data (BEGIN)
-                                           ; SOURCE LINE # 191
+                                           ; SOURCE LINE # 194
 0000 900000      R     MOV     DPTR,#Data
 0003 120000      E     LCALL   ?C?PSTXDATA
-                                           ; SOURCE LINE # 192
-                                           ; SOURCE LINE # 194
+                                           ; SOURCE LINE # 195
+                                           ; SOURCE LINE # 197
 0006 7F00              MOV     R7,#00H
 0008 120000      E     LCALL   _CS_Write
-                                           ; SOURCE LINE # 195
+                                           ; SOURCE LINE # 198
 000B 7F0A              MOV     R7,#0AH
 000D 7E00              MOV     R6,#00H
 000F 7D00              MOV     R5,#00H
 0011 7C00              MOV     R4,#00H
 0013 120000      E     LCALL   _?CyDelay
-                                           ; SOURCE LINE # 196
+                                           ; SOURCE LINE # 199
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 12  
+
 0016 7FE8              MOV     R7,#0E8H
 0018 120000      E     LCALL   _LIS331HH_SPI_WriteTxData
-                                           ; SOURCE LINE # 197
+                                           ; SOURCE LINE # 200
 001B 7F00              MOV     R7,#00H
 001D 120000      E     LCALL   _LIS331HH_SPI_WriteTxData
-                                           ; SOURCE LINE # 198
+                                           ; SOURCE LINE # 201
 0020 120000      E     LCALL   LIS331HH_SPI_ReadRxData
 0023 900000      R     MOV     DPTR,#Data
 0026 120000      E     LCALL   ?C?PLDXDATA
@@ -674,25 +699,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 002A 2401              ADD     A,#01H
 002C F9                MOV     R1,A
 002D EA                MOV     A,R2
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 12  
-
 002E 3400              ADDC    A,#00H
 0030 FA                MOV     R2,A
 0031 EF                MOV     A,R7
 0032 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 199
+                                           ; SOURCE LINE # 202
 0035 7F00              MOV     R7,#00H
 0037 120000      E     LCALL   _LIS331HH_SPI_WriteTxData
-                                           ; SOURCE LINE # 200
+                                           ; SOURCE LINE # 203
 003A 120000      E     LCALL   LIS331HH_SPI_ReadRxData
 003D 900000      R     MOV     DPTR,#Data
 0040 120000      E     LCALL   ?C?PLDXDATA
 0043 EF                MOV     A,R7
 0044 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 204
 0047 7F00              MOV     R7,#00H
 0049 120000      E     LCALL   _LIS331HH_SPI_WriteTxData
-                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 205
 004C 120000      E     LCALL   LIS331HH_SPI_ReadRxData
 004F 900000      R     MOV     DPTR,#Data
 0052 120000      E     LCALL   ?C?PLDXDATA
@@ -704,10 +727,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 005C FA                MOV     R2,A
 005D EF                MOV     A,R7
 005E 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 203
+                                           ; SOURCE LINE # 206
 0061 7F00              MOV     R7,#00H
 0063 120000      E     LCALL   _LIS331HH_SPI_WriteTxData
-                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 207
 0066 120000      E     LCALL   LIS331HH_SPI_ReadRxData
 0069 900000      R     MOV     DPTR,#Data
 006C 120000      E     LCALL   ?C?PLDXDATA
@@ -719,12 +742,14 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0076 FA                MOV     R2,A
 0077 EF                MOV     A,R7
 0078 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 208
 007B 7F00              MOV     R7,#00H
 007D 120000      E     LCALL   _LIS331HH_SPI_WriteTxData
-                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 209
 0080 120000      E     LCALL   LIS331HH_SPI_ReadRxData
 0083 900000      R     MOV     DPTR,#Data
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 13  
+
 0086 120000      E     LCALL   ?C?PLDXDATA
 0089 E9                MOV     A,R1
 008A 2405              ADD     A,#05H
@@ -734,12 +759,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0090 FA                MOV     R2,A
 0091 EF                MOV     A,R7
 0092 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 207
+                                           ; SOURCE LINE # 210
 0095 7F00              MOV     R7,#00H
 0097 120000      E     LCALL   _LIS331HH_SPI_WriteTxData
-                                           ; SOURCE LINE # 208
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 13  
-
+                                           ; SOURCE LINE # 211
 009A 120000      E     LCALL   LIS331HH_SPI_ReadRxData
 009D 900000      R     MOV     DPTR,#Data
 00A0 120000      E     LCALL   ?C?PLDXDATA
@@ -751,25 +774,25 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 00AA FA                MOV     R2,A
 00AB EF                MOV     A,R7
 00AC 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 209
+                                           ; SOURCE LINE # 212
 00AF 7F01              MOV     R7,#01H
 00B1 120000      E     LCALL   _CS_Write
-                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 213
 00B4 7F64              MOV     R7,#064H
 00B6 7E00              MOV     R6,#00H
 00B8 7D00              MOV     R5,#00H
 00BA 7C00              MOV     R4,#00H
 00BC 120000      E     LCALL   _?CyDelay
-                                           ; SOURCE LINE # 211
+                                           ; SOURCE LINE # 214
 00BF 22                RET     
              ; FUNCTION _get_LIS331HH_Data (END)
 
              ; FUNCTION _get_HMC5883L_Data (BEGIN)
-                                           ; SOURCE LINE # 212
+                                           ; SOURCE LINE # 215
 0000 900000      R     MOV     DPTR,#Data
 0003 120000      E     LCALL   ?C?PSTXDATA
-                                           ; SOURCE LINE # 213
-                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 216
+                                           ; SOURCE LINE # 224
 0006 7B01              MOV     R3,#01H
 0008 7A00        R     MOV     R2,#HIGH array
 000A 7900        R     MOV     R1,#LOW array
@@ -778,7 +801,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0011 F0                MOVX    @DPTR,A
 0012 7F03              MOV     R7,#03H
 0014 120000      R     LCALL   _i2c_read
-                                           ; SOURCE LINE # 223
+                                           ; SOURCE LINE # 226
 0017 900000      R     MOV     DPTR,#array
 001A E0                MOVX    A,@DPTR
 001B FF                MOV     R7,A
@@ -786,9 +809,11 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 001F 120000      E     LCALL   ?C?PLDXDATA
 0022 EF                MOV     A,R7
 0023 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 224
+                                           ; SOURCE LINE # 227
 0026 900000      R     MOV     DPTR,#array+01H
 0029 E0                MOVX    A,@DPTR
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 14  
+
 002A FF                MOV     R7,A
 002B 900000      R     MOV     DPTR,#Data
 002E 120000      E     LCALL   ?C?PLDXDATA
@@ -800,10 +825,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0038 FA                MOV     R2,A
 0039 EF                MOV     A,R7
 003A 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 228
 003D 900000      R     MOV     DPTR,#array+02H
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 14  
-
 0040 E0                MOVX    A,@DPTR
 0041 FF                MOV     R7,A
 0042 900000      R     MOV     DPTR,#Data
@@ -816,7 +839,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 004F FA                MOV     R2,A
 0050 EF                MOV     A,R7
 0051 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 229
 0054 900000      R     MOV     DPTR,#array+03H
 0057 E0                MOVX    A,@DPTR
 0058 FF                MOV     R7,A
@@ -830,7 +853,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0066 FA                MOV     R2,A
 0067 EF                MOV     A,R7
 0068 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 230
 006B 900000      R     MOV     DPTR,#array+04H
 006E E0                MOVX    A,@DPTR
 006F FF                MOV     R7,A
@@ -844,7 +867,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 007D FA                MOV     R2,A
 007E EF                MOV     A,R7
 007F 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 228
+                                           ; SOURCE LINE # 231
 0082 900000      R     MOV     DPTR,#array+05H
 0085 E0                MOVX    A,@DPTR
 0086 FF                MOV     R7,A
@@ -853,70 +876,72 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 008D E9                MOV     A,R1
 008E 2405              ADD     A,#05H
 0090 F9                MOV     R1,A
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 15  
+
 0091 EA                MOV     A,R2
 0092 3400              ADDC    A,#00H
 0094 FA                MOV     R2,A
 0095 EF                MOV     A,R7
 0096 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 238
+                                           ; SOURCE LINE # 241
 0099 22                RET     
              ; FUNCTION _get_HMC5883L_Data (END)
 
              ; FUNCTION menu (BEGIN)
-                                           ; SOURCE LINE # 239
-                                           ; SOURCE LINE # 240
-                                           ; SOURCE LINE # 241
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 15  
-
+                                           ; SOURCE LINE # 242
+                                           ; SOURCE LINE # 243
+                                           ; SOURCE LINE # 244
 0000 7BFF              MOV     R3,#0FFH
 0002 7A00        R     MOV     R2,#HIGH ?SC_40
 0004 7900        R     MOV     R1,#LOW ?SC_40
 0006 120000      E     LCALL   _CONFIG_COM_PutString
-                                           ; SOURCE LINE # 242
+                                           ; SOURCE LINE # 245
 0009 7BFF              MOV     R3,#0FFH
 000B 7A00        R     MOV     R2,#HIGH ?SC_103
 000D 7900        R     MOV     R1,#LOW ?SC_103
 000F 120000      E     LCALL   _CONFIG_COM_PutString
-                                           ; SOURCE LINE # 243
+                                           ; SOURCE LINE # 246
 0012 7BFF              MOV     R3,#0FFH
 0014 7A00        R     MOV     R2,#HIGH ?SC_110
 0016 7900        R     MOV     R1,#LOW ?SC_110
 0018 120000      E     LCALL   _CONFIG_COM_PutString
-                                           ; SOURCE LINE # 244
+                                           ; SOURCE LINE # 247
 001B 7BFF              MOV     R3,#0FFH
 001D 7A00        R     MOV     R2,#HIGH ?SC_132
 001F 7900        R     MOV     R1,#LOW ?SC_132
 0021 120000      E     LCALL   _CONFIG_COM_PutString
-                                           ; SOURCE LINE # 245
+                                           ; SOURCE LINE # 248
 0024 7BFF              MOV     R3,#0FFH
 0026 7A00        R     MOV     R2,#HIGH ?SC_154
 0028 7900        R     MOV     R1,#LOW ?SC_154
 002A 120000      E     LCALL   _CONFIG_COM_PutString
-                                           ; SOURCE LINE # 246
+                                           ; SOURCE LINE # 249
 002D 7BFF              MOV     R3,#0FFH
 002F 7A00        R     MOV     R2,#HIGH ?SC_176
 0031 7900        R     MOV     R1,#LOW ?SC_176
 0033 120000      E     LCALL   _CONFIG_COM_PutString
-                                           ; SOURCE LINE # 247
+                                           ; SOURCE LINE # 250
 0036 7BFF              MOV     R3,#0FFH
 0038 7A00        R     MOV     R2,#HIGH ?SC_197
 003A 7900        R     MOV     R1,#LOW ?SC_197
 003C 120000      E     LCALL   _CONFIG_COM_PutString
-                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 251
 003F 22                RET     
              ; FUNCTION menu (END)
 
              ; FUNCTION _get_All_data (BEGIN)
-                                           ; SOURCE LINE # 249
+                                           ; SOURCE LINE # 252
 0000 900000      R     MOV     DPTR,#array
 0003 120000      E     LCALL   ?C?PSTXDATA
-                                           ; SOURCE LINE # 250
-                                           ; SOURCE LINE # 256
+                                           ; SOURCE LINE # 253
+                                           ; SOURCE LINE # 259
 0006 900000      R     MOV     DPTR,#HMC5883L_Data
 0009 120000      E     LCALL   ?C?PLDXDATA
 000C 120000      R     LCALL   _get_HMC5883L_Data
-                                           ; SOURCE LINE # 257
+                                           ; SOURCE LINE # 260
 000F 900000      R     MOV     DPTR,#HMC5883L_Data
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 16  
+
 0012 120000      E     LCALL   ?C?PLDXDATA
 0015 C003              PUSH    AR3
 0017 C002              PUSH    AR2
@@ -930,8 +955,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0026 3400              ADDC    A,#00H
 0028 FA                MOV     R2,A
 0029 A801              MOV     R0,AR1
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 16  
-
 002B AC02              MOV     R4,AR2
 002D AD03              MOV     R5,AR3
 002F D001              POP     AR1
@@ -940,176 +963,276 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0035 7E00              MOV     R6,#00H
 0037 7F06              MOV     R7,#06H
 0039 120000      E     LCALL   ?C?COPYAMD
-                                           ; SOURCE LINE # 258
+                                           ; SOURCE LINE # 261
 003C 22                RET     
              ; FUNCTION _get_All_data (END)
 
              ; FUNCTION _i2c_write (BEGIN)
-                                           ; SOURCE LINE # 259
+                                           ; SOURCE LINE # 262
 0000 900000      R     MOV     DPTR,#subAddr
 0003 EF                MOV     A,R7
 0004 F0                MOVX    @DPTR,A
 0005 900000      R     MOV     DPTR,#buffer
 0008 120000      E     LCALL   ?C?PSTXDATA
-                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 267
 000B 120000      E     LCALL   HMC5883L_I2C_MasterClearStatus
-                                           ; SOURCE LINE # 268
+                                           ; SOURCE LINE # 271
 000E 7D00              MOV     R5,#00H
-0010 7F1E              MOV     R7,#01EH
+0010 7F0E              MOV     R7,#0EH
 0012 120000      E     LCALL   _HMC5883L_I2C_MasterSendStart
 0015 900000      R     MOV     DPTR,#status
 0018 EF                MOV     A,R7
 0019 F0                MOVX    @DPTR,A
-                                           ; SOURCE LINE # 269
+                                           ; SOURCE LINE # 272
 001A 900000      R     MOV     DPTR,#status
 001D E0                MOVX    A,@DPTR
 001E FF                MOV     R7,A
 001F EF                MOV     A,R7
-0020 6006              JZ      ?C0011
-                                           ; SOURCE LINE # 271
-0022 900000      R     MOV     DPTR,#status
-0025 E0                MOVX    A,@DPTR
-0026 FF                MOV     R7,A
-0027 22                RET     
-                                           ; SOURCE LINE # 272
-0028         ?C0011:
+0020 604C              JZ      ?C0011
+                                           ; SOURCE LINE # 273
+0022 7B01              MOV     R3,#01H
+0024 7A00        R     MOV     R2,#HIGH array
+0026 7900        R     MOV     R1,#LOW array
+0028 C003              PUSH    AR3
+002A C002              PUSH    AR2
+002C C001              PUSH    AR1
+002E 7BFF              MOV     R3,#0FFH
+0030 7A00        R     MOV     R2,#HIGH ?SC_216
+0032 7900        R     MOV     R1,#LOW ?SC_216
+0034 900000      E     MOV     DPTR,#?_sprintf?BYTE+03H
+0037 120000      E     LCALL   ?C?PSTXDATA
+003A 900000      R     MOV     DPTR,#status
+003D E0                MOVX    A,@DPTR
+003E FF                MOV     R7,A
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 17  
+
+003F 900000      E     MOV     DPTR,#?_sprintf?BYTE+06H
+0042 EF                MOV     A,R7
+0043 F0                MOVX    @DPTR,A
+0044 D001              POP     AR1
+0046 D002              POP     AR2
+0048 D003              POP     AR3
+004A 120000      E     LCALL   _sprintf
+004D 900000      R     MOV     DPTR,#i
+0050 EE                MOV     A,R6
+0051 F0                MOVX    @DPTR,A
+0052 A3                INC     DPTR
+0053 EF                MOV     A,R7
+0054 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 274
+0055 7B01              MOV     R3,#01H
+0057 7A00        R     MOV     R2,#HIGH array
+0059 7900        R     MOV     R1,#LOW array
+005B 900000      R     MOV     DPTR,#i
+005E E0                MOVX    A,@DPTR
+005F FE                MOV     R6,A
+0060 A3                INC     DPTR
+0061 E0                MOVX    A,@DPTR
+0062 FF                MOV     R7,A
+0063 AD07              MOV     R5,AR7
+0065 120000      E     LCALL   _DATA_COM_PutArray
                                            ; SOURCE LINE # 275
-0028 900000      R     MOV     DPTR,#subAddr
-002B E0                MOVX    A,@DPTR
-002C FF                MOV     R7,A
-002D 120000      E     LCALL   _HMC5883L_I2C_MasterWriteByte
-0030 900000      R     MOV     DPTR,#status
-0033 EF                MOV     A,R7
-0034 F0                MOVX    @DPTR,A
+0068 900000      R     MOV     DPTR,#status
+006B E0                MOVX    A,@DPTR
+006C FF                MOV     R7,A
+006D 22                RET     
                                            ; SOURCE LINE # 276
-0035 900000      R     MOV     DPTR,#status
-0038 E0                MOVX    A,@DPTR
-0039 FF                MOV     R7,A
-003A EF                MOV     A,R7
-003B 6006              JZ      ?C0013
-                                           ; SOURCE LINE # 277
-003D 900000      R     MOV     DPTR,#status
-0040 E0                MOVX    A,@DPTR
-0041 FF                MOV     R7,A
-0042 22                RET     
-                                           ; SOURCE LINE # 278
-0043         ?C0013:
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 17  
-
+006E         ?C0011:
+                                           ; SOURCE LINE # 279
+006E 900000      R     MOV     DPTR,#subAddr
+0071 E0                MOVX    A,@DPTR
+0072 FF                MOV     R7,A
+0073 120000      E     LCALL   _HMC5883L_I2C_MasterWriteByte
+0076 900000      R     MOV     DPTR,#status
+0079 EF                MOV     A,R7
+007A F0                MOVX    @DPTR,A
                                            ; SOURCE LINE # 280
-0043 900000      R     MOV     DPTR,#i
-0046 E4                CLR     A
-0047 F0                MOVX    @DPTR,A
-0048 A3                INC     DPTR
-0049 E4                CLR     A
-004A F0                MOVX    @DPTR,A
-004B         ?C0014:
-004B 900000      R     MOV     DPTR,#buff_size
-004E E0                MOVX    A,@DPTR
-004F FF                MOV     R7,A
-0050 7E00              MOV     R6,#00H
-0052 900000      R     MOV     DPTR,#i
-0055 E0                MOVX    A,@DPTR
-0056 FC                MOV     R4,A
-0057 A3                INC     DPTR
-0058 E0                MOVX    A,@DPTR
-0059 FD                MOV     R5,A
-005A C3                CLR     C
-005B ED                MOV     A,R5
-005C 9F                SUBB    A,R7
-005D EE                MOV     A,R6
-005E 6480              XRL     A,#080H
-0060 F8                MOV     R0,A
-0061 EC                MOV     A,R4
-0062 6480              XRL     A,#080H
-0064 98                SUBB    A,R0
-0065 502C              JNC     ?C0015
+007B 900000      R     MOV     DPTR,#status
+007E E0                MOVX    A,@DPTR
+007F FF                MOV     R7,A
+0080 EF                MOV     A,R7
+0081 604C              JZ      ?C0013
                                            ; SOURCE LINE # 281
-0067 900000      R     MOV     DPTR,#buffer
-006A 120000      E     LCALL   ?C?PLDXDATA
-006D 120000      E     LCALL   ?C?CLDPTR
-0070 FF                MOV     R7,A
-0071 120000      E     LCALL   _HMC5883L_I2C_MasterWriteByte
-0074 900000      R     MOV     DPTR,#status
-0077 EF                MOV     A,R7
-0078 F0                MOVX    @DPTR,A
-                                           ; SOURCE LINE # 282
-0079 900000      R     MOV     DPTR,#status
-007C E0                MOVX    A,@DPTR
-007D FF                MOV     R7,A
-007E EF                MOV     A,R7
-007F 6006              JZ      ?C0016
-                                           ; SOURCE LINE # 283
-0081 900000      R     MOV     DPTR,#status
-0084 E0                MOVX    A,@DPTR
-0085 FF                MOV     R7,A
-0086 22                RET     
-                                           ; SOURCE LINE # 284
-                                           ; SOURCE LINE # 285
-0087         ?C0016:
-0087 900000      R     MOV     DPTR,#i
-008A E4                CLR     A
-008B 75F001            MOV     B,#01H
-008E 120000      E     LCALL   ?C?IILDX
-0091 80B8              SJMP    ?C0014
-0093         ?C0015:
-                                           ; SOURCE LINE # 287
-0093 120000      E     LCALL   HMC5883L_I2C_MasterSendStop
-0096 900000      R     MOV     DPTR,#status
-0099 EF                MOV     A,R7
-009A F0                MOVX    @DPTR,A
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 18  
-
-                                           ; SOURCE LINE # 288
+0083 7B01              MOV     R3,#01H
+0085 7A00        R     MOV     R2,#HIGH array
+0087 7900        R     MOV     R1,#LOW array
+0089 C003              PUSH    AR3
+008B C002              PUSH    AR2
+008D C001              PUSH    AR1
+008F 7BFF              MOV     R3,#0FFH
+0091 7A00        R     MOV     R2,#HIGH ?SC_222
+0093 7900        R     MOV     R1,#LOW ?SC_222
+0095 900000      E     MOV     DPTR,#?_sprintf?BYTE+03H
+0098 120000      E     LCALL   ?C?PSTXDATA
 009B 900000      R     MOV     DPTR,#status
 009E E0                MOVX    A,@DPTR
 009F FF                MOV     R7,A
-00A0 EF                MOV     A,R7
-00A1 6006              JZ      ?C0018
+00A0 900000      E     MOV     DPTR,#?_sprintf?BYTE+06H
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 18  
+
+00A3 EF                MOV     A,R7
+00A4 F0                MOVX    @DPTR,A
+00A5 D001              POP     AR1
+00A7 D002              POP     AR2
+00A9 D003              POP     AR3
+00AB 120000      E     LCALL   _sprintf
+00AE 900000      R     MOV     DPTR,#i
+00B1 EE                MOV     A,R6
+00B2 F0                MOVX    @DPTR,A
+00B3 A3                INC     DPTR
+00B4 EF                MOV     A,R7
+00B5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 282
+00B6 7B01              MOV     R3,#01H
+00B8 7A00        R     MOV     R2,#HIGH array
+00BA 7900        R     MOV     R1,#LOW array
+00BC 900000      R     MOV     DPTR,#i
+00BF E0                MOVX    A,@DPTR
+00C0 FE                MOV     R6,A
+00C1 A3                INC     DPTR
+00C2 E0                MOVX    A,@DPTR
+00C3 FF                MOV     R7,A
+00C4 AD07              MOV     R5,AR7
+00C6 120000      E     LCALL   _DATA_COM_PutArray
+                                           ; SOURCE LINE # 283
+00C9 900000      R     MOV     DPTR,#status
+00CC E0                MOVX    A,@DPTR
+00CD FF                MOV     R7,A
+00CE 22                RET     
+                                           ; SOURCE LINE # 284
+00CF         ?C0013:
+                                           ; SOURCE LINE # 286
+00CF 900000      R     MOV     DPTR,#i
+00D2 E4                CLR     A
+00D3 F0                MOVX    @DPTR,A
+00D4 A3                INC     DPTR
+00D5 E4                CLR     A
+00D6 F0                MOVX    @DPTR,A
+00D7         ?C0014:
+00D7 900000      R     MOV     DPTR,#buff_size
+00DA E0                MOVX    A,@DPTR
+00DB FF                MOV     R7,A
+00DC 7E00              MOV     R6,#00H
+00DE 900000      R     MOV     DPTR,#i
+00E1 E0                MOVX    A,@DPTR
+00E2 FC                MOV     R4,A
+00E3 A3                INC     DPTR
+00E4 E0                MOVX    A,@DPTR
+00E5 FD                MOV     R5,A
+00E6 C3                CLR     C
+00E7 ED                MOV     A,R5
+00E8 9F                SUBB    A,R7
+00E9 EE                MOV     A,R6
+00EA 6480              XRL     A,#080H
+00EC F8                MOV     R0,A
+00ED EC                MOV     A,R4
+00EE 6480              XRL     A,#080H
+00F0 98                SUBB    A,R0
+00F1 503A              JNC     ?C0015
+                                           ; SOURCE LINE # 287
+00F3 900000      R     MOV     DPTR,#buffer
+00F6 120000      E     LCALL   ?C?PLDXDATA
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 19  
+
+00F9 900000      R     MOV     DPTR,#i
+00FC E0                MOVX    A,@DPTR
+00FD FE                MOV     R6,A
+00FE A3                INC     DPTR
+00FF E0                MOVX    A,@DPTR
+0100 FF                MOV     R7,A
+0101 E9                MOV     A,R1
+0102 2F                ADD     A,R7
+0103 F9                MOV     R1,A
+0104 EA                MOV     A,R2
+0105 3E                ADDC    A,R6
+0106 FA                MOV     R2,A
+0107 120000      E     LCALL   ?C?CLDPTR
+010A FF                MOV     R7,A
+010B 120000      E     LCALL   _HMC5883L_I2C_MasterWriteByte
+010E 900000      R     MOV     DPTR,#status
+0111 EF                MOV     A,R7
+0112 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 288
+0113 900000      R     MOV     DPTR,#status
+0116 E0                MOVX    A,@DPTR
+0117 FF                MOV     R7,A
+0118 EF                MOV     A,R7
+0119 6006              JZ      ?C0016
                                            ; SOURCE LINE # 289
-00A3 900000      R     MOV     DPTR,#status
-00A6 E0                MOVX    A,@DPTR
-00A7 FF                MOV     R7,A
-00A8 22                RET     
+011B 900000      R     MOV     DPTR,#status
+011E E0                MOVX    A,@DPTR
+011F FF                MOV     R7,A
+0120 22                RET     
                                            ; SOURCE LINE # 290
-00A9         ?C0018:
                                            ; SOURCE LINE # 291
-00A9 900000      R     MOV     DPTR,#status
-00AC E0                MOVX    A,@DPTR
-00AD FF                MOV     R7,A
                                            ; SOURCE LINE # 292
-00AE         ?C0012:
-00AE 22                RET     
+                                           ; SOURCE LINE # 293
+0121         ?C0016:
+0121 900000      R     MOV     DPTR,#i
+0124 E4                CLR     A
+0125 75F001            MOV     B,#01H
+0128 120000      E     LCALL   ?C?IILDX
+012B 80AA              SJMP    ?C0014
+012D         ?C0015:
+                                           ; SOURCE LINE # 295
+012D 120000      E     LCALL   HMC5883L_I2C_MasterSendStop
+0130 900000      R     MOV     DPTR,#status
+0133 EF                MOV     A,R7
+0134 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 296
+0135 900000      R     MOV     DPTR,#status
+0138 E0                MOVX    A,@DPTR
+0139 FF                MOV     R7,A
+013A EF                MOV     A,R7
+013B 6006              JZ      ?C0018
+                                           ; SOURCE LINE # 297
+013D 900000      R     MOV     DPTR,#status
+0140 E0                MOVX    A,@DPTR
+0141 FF                MOV     R7,A
+0142 22                RET     
+                                           ; SOURCE LINE # 298
+                                           ; SOURCE LINE # 299
+                                           ; SOURCE LINE # 300
+0143         ?C0018:
+                                           ; SOURCE LINE # 301
+0143 900000      R     MOV     DPTR,#status
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 20  
+
+0146 E0                MOVX    A,@DPTR
+0147 FF                MOV     R7,A
+                                           ; SOURCE LINE # 302
+0148         ?C0012:
+0148 22                RET     
              ; FUNCTION _i2c_write (END)
 
              ; FUNCTION _i2c_read (BEGIN)
-                                           ; SOURCE LINE # 293
+                                           ; SOURCE LINE # 303
 0000 900000      R     MOV     DPTR,#subAddr
 0003 EF                MOV     A,R7
 0004 F0                MOVX    @DPTR,A
 0005 900000      R     MOV     DPTR,#buffer
 0008 120000      E     LCALL   ?C?PSTXDATA
-                                           ; SOURCE LINE # 299
+                                           ; SOURCE LINE # 309
 000B 120000      E     LCALL   HMC5883L_I2C_MasterClearStatus
-                                           ; SOURCE LINE # 300
+                                           ; SOURCE LINE # 310
 000E 7BFF              MOV     R3,#0FFH
-0010 7A00        R     MOV     R2,#HIGH ?SC_216
-0012 7900        R     MOV     R1,#LOW ?SC_216
+0010 7A00        R     MOV     R2,#HIGH ?SC_240
+0012 7900        R     MOV     R1,#LOW ?SC_240
 0014 120000      E     LCALL   _DATA_COM_PutString
-                                           ; SOURCE LINE # 302
+                                           ; SOURCE LINE # 312
 0017 7D00              MOV     R5,#00H
-0019 7F1E              MOV     R7,#01EH
+0019 7F0E              MOV     R7,#0EH
 001B 120000      E     LCALL   _HMC5883L_I2C_MasterSendStart
 001E 900000      R     MOV     DPTR,#status
 0021 EF                MOV     A,R7
 0022 F0                MOVX    @DPTR,A
-                                           ; SOURCE LINE # 303
+                                           ; SOURCE LINE # 313
 0023 900000      R     MOV     DPTR,#status
 0026 E0                MOVX    A,@DPTR
 0027 FF                MOV     R7,A
 0028 EF                MOV     A,R7
 0029 604C              JZ      ?C0019
-                                           ; SOURCE LINE # 304
+                                           ; SOURCE LINE # 314
 002B 7B01              MOV     R3,#01H
 002D 7A00        R     MOV     R2,#HIGH array
 002F 7900        R     MOV     R1,#LOW array
@@ -1117,13 +1240,11 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0033 C002              PUSH    AR2
 0035 C001              PUSH    AR1
 0037 7BFF              MOV     R3,#0FFH
-0039 7A00        R     MOV     R2,#HIGH ?SC_233
-003B 7900        R     MOV     R1,#LOW ?SC_233
+0039 7A00        R     MOV     R2,#HIGH ?SC_257
+003B 7900        R     MOV     R1,#LOW ?SC_257
 003D 900000      E     MOV     DPTR,#?_sprintf?BYTE+03H
 0040 120000      E     LCALL   ?C?PSTXDATA
 0043 900000      R     MOV     DPTR,#status
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 19  
-
 0046 E0                MOVX    A,@DPTR
 0047 FF                MOV     R7,A
 0048 900000      E     MOV     DPTR,#?_sprintf?BYTE+06H
@@ -1139,7 +1260,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 005B A3                INC     DPTR
 005C EF                MOV     A,R7
 005D F0                MOVX    @DPTR,A
-                                           ; SOURCE LINE # 305
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 21  
+
+                                           ; SOURCE LINE # 315
 005E 7B01              MOV     R3,#01H
 0060 7A00        R     MOV     R2,#HIGH array
 0062 7900        R     MOV     R1,#LOW array
@@ -1151,26 +1274,26 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 006B FF                MOV     R7,A
 006C AD07              MOV     R5,AR7
 006E 120000      E     LCALL   _DATA_COM_PutArray
-                                           ; SOURCE LINE # 306
+                                           ; SOURCE LINE # 316
 0071 900000      R     MOV     DPTR,#status
 0074 E0                MOVX    A,@DPTR
 0075 FF                MOV     R7,A
 0076 22                RET     
-                                           ; SOURCE LINE # 307
+                                           ; SOURCE LINE # 317
 0077         ?C0019:
-                                           ; SOURCE LINE # 308
+                                           ; SOURCE LINE # 318
 0077 7BFF              MOV     R3,#0FFH
-0079 7A00        R     MOV     R2,#HIGH ?SC_216
-007B 7900        R     MOV     R1,#LOW ?SC_216
+0079 7A00        R     MOV     R2,#HIGH ?SC_240
+007B 7900        R     MOV     R1,#LOW ?SC_240
 007D 120000      E     LCALL   _DATA_COM_PutString
-                                           ; SOURCE LINE # 309
+                                           ; SOURCE LINE # 319
 0080 7F00              MOV     R7,#00H
 0082 120000      E     LCALL   _HMC5883L_I2C_MasterReadByte
 0085 900000      R     MOV     DPTR,#buffer
 0088 120000      E     LCALL   ?C?PLDXDATA
 008B EF                MOV     A,R7
 008C 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 311
+                                           ; SOURCE LINE # 321
 008F 900000      R     MOV     DPTR,#subAddr
 0092 E0                MOVX    A,@DPTR
 0093 FF                MOV     R7,A
@@ -1178,42 +1301,42 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0097 900000      R     MOV     DPTR,#status
 009A EF                MOV     A,R7
 009B F0                MOVX    @DPTR,A
-                                           ; SOURCE LINE # 312
+                                           ; SOURCE LINE # 322
 009C 900000      R     MOV     DPTR,#status
 009F E0                MOVX    A,@DPTR
 00A0 FF                MOV     R7,A
 00A1 EF                MOV     A,R7
 00A2 6006              JZ      ?C0021
-                                           ; SOURCE LINE # 313
+                                           ; SOURCE LINE # 323
 00A4 900000      R     MOV     DPTR,#status
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 20  
-
 00A7 E0                MOVX    A,@DPTR
 00A8 FF                MOV     R7,A
 00A9 22                RET     
-                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 324
 00AA         ?C0021:
-                                           ; SOURCE LINE # 316
+                                           ; SOURCE LINE # 326
 00AA 7D01              MOV     R5,#01H
-00AC 7F1E              MOV     R7,#01EH
+00AC 7F0E              MOV     R7,#0EH
 00AE 120000      E     LCALL   _HMC5883L_I2C_MasterSendRestart
 00B1 900000      R     MOV     DPTR,#status
 00B4 EF                MOV     A,R7
 00B5 F0                MOVX    @DPTR,A
-                                           ; SOURCE LINE # 317
+                                           ; SOURCE LINE # 327
 00B6 900000      R     MOV     DPTR,#status
 00B9 E0                MOVX    A,@DPTR
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 22  
+
 00BA FF                MOV     R7,A
 00BB EF                MOV     A,R7
 00BC 6006              JZ      ?C0022
-                                           ; SOURCE LINE # 318
+                                           ; SOURCE LINE # 328
 00BE 900000      R     MOV     DPTR,#status
 00C1 E0                MOVX    A,@DPTR
 00C2 FF                MOV     R7,A
 00C3 22                RET     
-                                           ; SOURCE LINE # 319
+                                           ; SOURCE LINE # 329
 00C4         ?C0022:
-                                           ; SOURCE LINE # 321
+                                           ; SOURCE LINE # 331
 00C4 900000      R     MOV     DPTR,#i
 00C7 E4                CLR     A
 00C8 F0                MOVX    @DPTR,A
@@ -1241,7 +1364,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 00E3 6480              XRL     A,#080H
 00E5 98                SUBB    A,R0
 00E6 504C              JNC     ?C0024
-                                           ; SOURCE LINE # 322
+                                           ; SOURCE LINE # 332
 00E8 900000      R     MOV     DPTR,#buff_size
 00EB E0                MOVX    A,@DPTR
 00EC FF                MOV     R7,A
@@ -1250,8 +1373,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 00EF FF                MOV     R7,A
 00F0 7E00              MOV     R6,#00H
 00F2 900000      R     MOV     DPTR,#i
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 21  
-
 00F5 E0                MOVX    A,@DPTR
 00F6 FC                MOV     R4,A
 00F7 A3                INC     DPTR
@@ -1267,6 +1388,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0102 6480              XRL     A,#080H
 0104 98                SUBB    A,R0
 0105 5004              JNC     ?C0026
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 23  
+
 0107 7F01              MOV     R7,#01H
 0109 8002              SJMP    ?C0027
 010B         ?C0026:
@@ -1289,36 +1412,34 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0123 FA                MOV     R2,A
 0124 EF                MOV     A,R7
 0125 120000      E     LCALL   ?C?CSTPTR
-                                           ; SOURCE LINE # 323
+                                           ; SOURCE LINE # 333
 0128 900000      R     MOV     DPTR,#i
 012B E4                CLR     A
 012C 75F001            MOV     B,#01H
 012F 120000      E     LCALL   ?C?IILDX
 0132 8098              SJMP    ?C0023
 0134         ?C0024:
-                                           ; SOURCE LINE # 325
+                                           ; SOURCE LINE # 335
 0134 120000      E     LCALL   HMC5883L_I2C_MasterSendStop
 0137 900000      R     MOV     DPTR,#status
 013A EF                MOV     A,R7
 013B F0                MOVX    @DPTR,A
-                                           ; SOURCE LINE # 326
+                                           ; SOURCE LINE # 336
 013C 900000      R     MOV     DPTR,#status
 013F E0                MOVX    A,@DPTR
 0140 FF                MOV     R7,A
 0141 EF                MOV     A,R7
 0142 6006              JZ      ?C0028
-                                           ; SOURCE LINE # 327
+                                           ; SOURCE LINE # 337
 0144 900000      R     MOV     DPTR,#status
 0147 E0                MOVX    A,@DPTR
 0148 FF                MOV     R7,A
 0149 22                RET     
-                                           ; SOURCE LINE # 328
+                                           ; SOURCE LINE # 338
 014A         ?C0028:
-C51 COMPILER V9.51   MAIN                                                                  07/17/2014 14:38:24 PAGE 22  
-
-                                           ; SOURCE LINE # 329
+                                           ; SOURCE LINE # 339
 014A 7F00              MOV     R7,#00H
-                                           ; SOURCE LINE # 330
+                                           ; SOURCE LINE # 340
 014C         ?C0020:
 014C 22                RET     
              ; FUNCTION _i2c_read (END)
@@ -1326,11 +1447,13 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1389    ----
-   CONSTANT SIZE    =    239    ----
-   XDATA SIZE       =      3     184
+   CODE SIZE        =   1567    ----
+   CONSTANT SIZE    =    263    ----
+   XDATA SIZE       =      3     194
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
+C51 COMPILER V9.51   MAIN                                                                  07/21/2014 13:49:43 PAGE 24  
+
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
    EDATA SIZE       =   ----    ----

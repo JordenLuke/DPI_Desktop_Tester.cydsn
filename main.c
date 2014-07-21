@@ -11,7 +11,7 @@
 */
 #include <project.h>
 #include <stdio.h>
-#define HMC5883L_Address 0x1E //used to mark read address
+#define HMC5883L_Address 0x0E //used to mark read address
 //used to hold the x y z  data from the sensors
 struct XYZ_Cord{
 	int16 x;
@@ -167,9 +167,12 @@ void HMC5883L_Config()
 {
 	uint8 slave= 0x1E;
 	uint8 array[2];
-	array [0] = 0x0;
-	i2c_write(0x2,array,1);
+	array [0] = 0x80;
+	i2c_write(0x11,array,1);
 	
+	array [0] = 1;
+	i2c_write(0x10,array,1);
+
 //	HMC5883L_I2C_MasterClearStatus();
 //	
 //	array[REG_ADDRESS] = 0x02u;
@@ -260,33 +263,40 @@ uint8 i2c_write(uint8 subAddr, uint8 *buffer, uint8 buff_size) {
 
 	int i;
 	uint8 status;
-
+	char array[10];
 	HMC5883L_I2C_MasterClearStatus();
 
 	
 	//Set subaddr
 	status = HMC5883L_I2C_MasterSendStart(HMC5883L_Address, 0);
 	if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
-		
+		i= sprintf(array, "1: %d",status);
+		DATA_COM_PutArray(array,i);
 		return status;
 	}
    
      
 	status = HMC5883L_I2C_MasterWriteByte(subAddr);
 	if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
+		i= sprintf(array, "2: %d",status);
+		DATA_COM_PutArray(array,i);
 		return status;
 	}
                
 	for (i=0;i<buff_size;i++) {
-		status = HMC5883L_I2C_MasterWriteByte(buffer[0]);
+		status = HMC5883L_I2C_MasterWriteByte(buffer[i]);
 		if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
 			return status;
+			i= sprintf(array, "3: %d",status);
+		DATA_COM_PutArray(array,i);
 		}
 	}
                   
 		status = HMC5883L_I2C_MasterSendStop();
 	if (status != HMC5883L_I2C_MSTR_NO_ERROR) {
 		return status;
+		i= sprintf(array, "4: %d",status);
+		DATA_COM_PutArray(array,i);
 	}   
 	return status;
 }
