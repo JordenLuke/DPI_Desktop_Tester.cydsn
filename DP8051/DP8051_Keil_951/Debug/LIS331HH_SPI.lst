@@ -1,0 +1,1863 @@
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE LIS331HH_SPI
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\LIS331HH_SPI.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\LIS331HH_SPI.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\LIS331HH_SPI.lst)
+                    - CD DB NOIP OT(2,SIZE) DF(DEBUG) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\LIS331HH_SPI.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: LIS331HH_SPI.c
+   3          * Version 2.40
+   4          *
+   5          * Description:
+   6          *  This file provides all API functionality of the SPI Master component.
+   7          *
+   8          * Note:
+   9          *  None.
+  10          *
+  11          ********************************************************************************
+  12          * Copyright 2008-2012, Cypress Semiconductor Corporation.  All rights reserved.
+  13          * You may use this file only in accordance with the license, terms, conditions,
+  14          * disclaimers, and limitations in the end user license agreement accompanying
+  15          * the software package with which this file was provided.
+  16          *******************************************************************************/
+  17          
+  18          #include "LIS331HH_SPI_PVT.h"
+  19          
+  20          #if(LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED)
+                  volatile uint8 LIS331HH_SPI_txBuffer[LIS331HH_SPI_TX_BUFFER_SIZE] = {0u};
+                  volatile uint8 LIS331HH_SPI_txBufferFull;
+                  volatile uint8 LIS331HH_SPI_txBufferRead;
+                  volatile uint8 LIS331HH_SPI_txBufferWrite;
+              #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED) */
+  26          
+  27          #if(LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED)
+                  volatile uint8 LIS331HH_SPI_rxBuffer[LIS331HH_SPI_RX_BUFFER_SIZE] = {0u};
+                  volatile uint8 LIS331HH_SPI_rxBufferFull;
+                  volatile uint8 LIS331HH_SPI_rxBufferRead;
+                  volatile uint8 LIS331HH_SPI_rxBufferWrite;
+              #endif /* (LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED) */
+  33          
+  34          uint8 LIS331HH_SPI_initVar = 0u;
+  35          
+  36          volatile uint8 LIS331HH_SPI_swStatusTx;
+  37          volatile uint8 LIS331HH_SPI_swStatusRx;
+  38          
+  39          
+  40          /*******************************************************************************
+  41          * Function Name: LIS331HH_SPI_Init
+  42          ********************************************************************************
+  43          *
+  44          * Summary:
+  45          *  Inits/Restores default SPIM configuration provided with customizer.
+  46          *
+  47          * Parameters:
+  48          *  None.
+  49          *
+  50          * Return:
+  51          *  None.
+  52          *
+  53          * Side Effects:
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 2   
+
+  54          *  When this function is called it initializes all of the necessary parameters
+  55          *  for execution. i.e. setting the initial interrupt mask, configuring the
+  56          *  interrupt service routine, configuring the bit-counter parameters and
+  57          *  clearing the FIFO and Status Register.
+  58          *
+  59          * Reentrant:
+  60          *  No.
+  61          *
+  62          *******************************************************************************/
+  63          void LIS331HH_SPI_Init(void) 
+  64          {
+  65   1          /* Initialize the Bit counter */
+  66   1          LIS331HH_SPI_COUNTER_PERIOD_REG = LIS331HH_SPI_BITCTR_INIT;
+  67   1      
+  68   1          /* Init TX ISR  */
+  69   1          #if(0u != LIS331HH_SPI_INTERNAL_TX_INT_ENABLED)
+                      CyIntDisable         (LIS331HH_SPI_TX_ISR_NUMBER);
+                      CyIntSetPriority     (LIS331HH_SPI_TX_ISR_NUMBER,  LIS331HH_SPI_TX_ISR_PRIORITY);
+                      (void) CyIntSetVector(LIS331HH_SPI_TX_ISR_NUMBER, &LIS331HH_SPI_TX_ISR);
+                  #endif /* (0u != LIS331HH_SPI_INTERNAL_TX_INT_ENABLED) */
+  74   1      
+  75   1          /* Init RX ISR  */
+  76   1          #if(0u != LIS331HH_SPI_INTERNAL_RX_INT_ENABLED)
+                      CyIntDisable         (LIS331HH_SPI_RX_ISR_NUMBER);
+                      CyIntSetPriority     (LIS331HH_SPI_RX_ISR_NUMBER,  LIS331HH_SPI_RX_ISR_PRIORITY);
+                      (void) CyIntSetVector(LIS331HH_SPI_RX_ISR_NUMBER, &LIS331HH_SPI_RX_ISR);
+                  #endif /* (0u != LIS331HH_SPI_INTERNAL_RX_INT_ENABLED) */
+  81   1      
+  82   1          /* Clear any stray data from the RX and TX FIFO */
+  83   1          LIS331HH_SPI_ClearFIFO();
+  84   1      
+  85   1          #if(LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED)
+                      LIS331HH_SPI_rxBufferFull  = 0u;
+                      LIS331HH_SPI_rxBufferRead  = 0u;
+                      LIS331HH_SPI_rxBufferWrite = 0u;
+                  #endif /* (LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED) */
+  90   1      
+  91   1          #if(LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED)
+                      LIS331HH_SPI_txBufferFull  = 0u;
+                      LIS331HH_SPI_txBufferRead  = 0u;
+                      LIS331HH_SPI_txBufferWrite = 0u;
+                  #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED) */
+  96   1      
+  97   1          (void) LIS331HH_SPI_ReadTxStatus(); /* Clear Tx status and swStatusTx */
+  98   1          (void) LIS331HH_SPI_ReadRxStatus(); /* Clear Rx status and swStatusRx */
+  99   1      
+ 100   1          /* Configure TX and RX interrupt mask */
+ 101   1          LIS331HH_SPI_TX_STATUS_MASK_REG = LIS331HH_SPI_TX_INIT_INTERRUPTS_MASK;
+ 102   1          LIS331HH_SPI_RX_STATUS_MASK_REG = LIS331HH_SPI_RX_INIT_INTERRUPTS_MASK;
+ 103   1      }
+ 104          
+ 105          
+ 106          /*******************************************************************************
+ 107          * Function Name: LIS331HH_SPI_Enable
+ 108          ********************************************************************************
+ 109          *
+ 110          * Summary:
+ 111          *  Enable SPIM component.
+ 112          *
+ 113          * Parameters:
+ 114          *  None.
+ 115          *
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 3   
+
+ 116          * Return:
+ 117          *  None.
+ 118          *
+ 119          *******************************************************************************/
+ 120          void LIS331HH_SPI_Enable(void) 
+ 121          {
+ 122   1          uint8 enableInterrupts;
+ 123   1      
+ 124   1          enableInterrupts = CyEnterCriticalSection();
+ 125   1          LIS331HH_SPI_COUNTER_CONTROL_REG |= LIS331HH_SPI_CNTR_ENABLE;
+ 126   1          LIS331HH_SPI_TX_STATUS_ACTL_REG  |= LIS331HH_SPI_INT_ENABLE;
+ 127   1          LIS331HH_SPI_RX_STATUS_ACTL_REG  |= LIS331HH_SPI_INT_ENABLE;
+ 128   1          CyExitCriticalSection(enableInterrupts);
+ 129   1      
+ 130   1          #if(0u != LIS331HH_SPI_INTERNAL_CLOCK)
+ 131   1              LIS331HH_SPI_IntClock_Enable();
+ 132   1          #endif /* (0u != LIS331HH_SPI_INTERNAL_CLOCK) */
+ 133   1      
+ 134   1          LIS331HH_SPI_EnableTxInt();
+ 135   1          LIS331HH_SPI_EnableRxInt();
+ 136   1      }
+ 137          
+ 138          
+ 139          /*******************************************************************************
+ 140          * Function Name: LIS331HH_SPI_Start
+ 141          ********************************************************************************
+ 142          *
+ 143          * Summary:
+ 144          *  Initialize and Enable the SPI Master component.
+ 145          *
+ 146          * Parameters:
+ 147          *  None.
+ 148          *
+ 149          * Return:
+ 150          *  None.
+ 151          *
+ 152          * Global variables:
+ 153          *  LIS331HH_SPI_initVar - used to check initial configuration, modified on
+ 154          *  first function call.
+ 155          *
+ 156          * Theory:
+ 157          *  Enable the clock input to enable operation.
+ 158          *
+ 159          * Reentrant:
+ 160          *  No.
+ 161          *
+ 162          *******************************************************************************/
+ 163          void LIS331HH_SPI_Start(void) 
+ 164          {
+ 165   1          if(0u == LIS331HH_SPI_initVar)
+ 166   1          {
+ 167   2              LIS331HH_SPI_Init();
+ 168   2              LIS331HH_SPI_initVar = 1u;
+ 169   2          }
+ 170   1      
+ 171   1          LIS331HH_SPI_Enable();
+ 172   1      }
+ 173          
+ 174          
+ 175          /*******************************************************************************
+ 176          * Function Name: LIS331HH_SPI_Stop
+ 177          ********************************************************************************
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 4   
+
+ 178          *
+ 179          * Summary:
+ 180          *  Disable the SPI Master component.
+ 181          *
+ 182          * Parameters:
+ 183          *  None.
+ 184          *
+ 185          * Return:
+ 186          *  None.
+ 187          *
+ 188          * Theory:
+ 189          *  Disable the clock input to enable operation.
+ 190          *
+ 191          *******************************************************************************/
+ 192          void LIS331HH_SPI_Stop(void) 
+ 193          {
+ 194   1          uint8 enableInterrupts;
+ 195   1      
+ 196   1          enableInterrupts = CyEnterCriticalSection();
+ 197   1          LIS331HH_SPI_TX_STATUS_ACTL_REG &= ((uint8) ~LIS331HH_SPI_INT_ENABLE);
+ 198   1          LIS331HH_SPI_RX_STATUS_ACTL_REG &= ((uint8) ~LIS331HH_SPI_INT_ENABLE);
+ 199   1          CyExitCriticalSection(enableInterrupts);
+ 200   1      
+ 201   1          #if(0u != LIS331HH_SPI_INTERNAL_CLOCK)
+ 202   1              LIS331HH_SPI_IntClock_Disable();
+ 203   1          #endif /* (0u != LIS331HH_SPI_INTERNAL_CLOCK) */
+ 204   1      
+ 205   1          LIS331HH_SPI_DisableTxInt();
+ 206   1          LIS331HH_SPI_DisableRxInt();
+ 207   1      }
+ 208          
+ 209          
+ 210          /*******************************************************************************
+ 211          * Function Name: LIS331HH_SPI_EnableTxInt
+ 212          ********************************************************************************
+ 213          *
+ 214          * Summary:
+ 215          *  Enable internal Tx interrupt generation.
+ 216          *
+ 217          * Parameters:
+ 218          *  None.
+ 219          *
+ 220          * Return:
+ 221          *  None.
+ 222          *
+ 223          * Theory:
+ 224          *  Enable the internal Tx interrupt output -or- the interrupt component itself.
+ 225          *
+ 226          *******************************************************************************/
+ 227          void LIS331HH_SPI_EnableTxInt(void) 
+ 228          {
+ 229   1          #if(0u != LIS331HH_SPI_INTERNAL_TX_INT_ENABLED)
+                      CyIntEnable(LIS331HH_SPI_TX_ISR_NUMBER);
+                  #endif /* (0u != LIS331HH_SPI_INTERNAL_TX_INT_ENABLED) */
+ 232   1      }
+ 233          
+ 234          
+ 235          /*******************************************************************************
+ 236          * Function Name: LIS331HH_SPI_EnableRxInt
+ 237          ********************************************************************************
+ 238          *
+ 239          * Summary:
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 5   
+
+ 240          *  Enable internal Rx interrupt generation.
+ 241          *
+ 242          * Parameters:
+ 243          *  None.
+ 244          *
+ 245          * Return:
+ 246          *  None.
+ 247          *
+ 248          * Theory:
+ 249          *  Enable the internal Rx interrupt output -or- the interrupt component itself.
+ 250          *
+ 251          *******************************************************************************/
+ 252          void LIS331HH_SPI_EnableRxInt(void) 
+ 253          {
+ 254   1          #if(0u != LIS331HH_SPI_INTERNAL_RX_INT_ENABLED)
+                      CyIntEnable(LIS331HH_SPI_RX_ISR_NUMBER);
+                  #endif /* (0u != LIS331HH_SPI_INTERNAL_RX_INT_ENABLED) */
+ 257   1      }
+ 258          
+ 259          
+ 260          /*******************************************************************************
+ 261          * Function Name: LIS331HH_SPI_DisableTxInt
+ 262          ********************************************************************************
+ 263          *
+ 264          * Summary:
+ 265          *  Disable internal Tx interrupt generation.
+ 266          *
+ 267          * Parameters:
+ 268          *  None.
+ 269          *
+ 270          * Return:
+ 271          *  None.
+ 272          *
+ 273          * Theory:
+ 274          *  Disable the internal Tx interrupt output -or- the interrupt component itself.
+ 275          *
+ 276          *******************************************************************************/
+ 277          void LIS331HH_SPI_DisableTxInt(void) 
+ 278          {
+ 279   1          #if(0u != LIS331HH_SPI_INTERNAL_TX_INT_ENABLED)
+                      CyIntDisable(LIS331HH_SPI_TX_ISR_NUMBER);
+                  #endif /* (0u != LIS331HH_SPI_INTERNAL_TX_INT_ENABLED) */
+ 282   1      }
+ 283          
+ 284          
+ 285          /*******************************************************************************
+ 286          * Function Name: LIS331HH_SPI_DisableRxInt
+ 287          ********************************************************************************
+ 288          *
+ 289          * Summary:
+ 290          *  Disable internal Rx interrupt generation.
+ 291          *
+ 292          * Parameters:
+ 293          *  None.
+ 294          *
+ 295          * Return:
+ 296          *  None.
+ 297          *
+ 298          * Theory:
+ 299          *  Disable the internal Rx interrupt output -or- the interrupt component itself.
+ 300          *
+ 301          *******************************************************************************/
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 6   
+
+ 302          void LIS331HH_SPI_DisableRxInt(void) 
+ 303          {
+ 304   1          #if(0u != LIS331HH_SPI_INTERNAL_RX_INT_ENABLED)
+                      CyIntDisable(LIS331HH_SPI_RX_ISR_NUMBER);
+                  #endif /* (0u != LIS331HH_SPI_INTERNAL_RX_INT_ENABLED) */
+ 307   1      }
+ 308          
+ 309          
+ 310          /*******************************************************************************
+ 311          * Function Name: LIS331HH_SPI_SetTxInterruptMode
+ 312          ********************************************************************************
+ 313          *
+ 314          * Summary:
+ 315          *  Configure which status bits trigger an interrupt event.
+ 316          *
+ 317          * Parameters:
+ 318          *  intSrc: An or'd combination of the desired status bit masks (defined in the
+ 319          *  header file).
+ 320          *
+ 321          * Return:
+ 322          *  None.
+ 323          *
+ 324          * Theory:
+ 325          *  Enables the output of specific status bits to the interrupt controller.
+ 326          *
+ 327          *******************************************************************************/
+ 328          void LIS331HH_SPI_SetTxInterruptMode(uint8 intSrc) 
+ 329          {
+ 330   1          LIS331HH_SPI_TX_STATUS_MASK_REG = intSrc;
+ 331   1      }
+ 332          
+ 333          
+ 334          /*******************************************************************************
+ 335          * Function Name: LIS331HH_SPI_SetRxInterruptMode
+ 336          ********************************************************************************
+ 337          *
+ 338          * Summary:
+ 339          *  Configure which status bits trigger an interrupt event.
+ 340          *
+ 341          * Parameters:
+ 342          *  intSrc: An or'd combination of the desired status bit masks (defined in the
+ 343          *  header file).
+ 344          *
+ 345          * Return:
+ 346          *  None.
+ 347          *
+ 348          * Theory:
+ 349          *  Enables the output of specific status bits to the interrupt controller.
+ 350          *
+ 351          *******************************************************************************/
+ 352          void LIS331HH_SPI_SetRxInterruptMode(uint8 intSrc) 
+ 353          {
+ 354   1          LIS331HH_SPI_RX_STATUS_MASK_REG  = intSrc;
+ 355   1      }
+ 356          
+ 357          
+ 358          /*******************************************************************************
+ 359          * Function Name: LIS331HH_SPI_ReadTxStatus
+ 360          ********************************************************************************
+ 361          *
+ 362          * Summary:
+ 363          *  Read the Tx status register for the component.
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 7   
+
+ 364          *
+ 365          * Parameters:
+ 366          *  None.
+ 367          *
+ 368          * Return:
+ 369          *  Contents of the Tx status register.
+ 370          *
+ 371          * Global variables:
+ 372          *  LIS331HH_SPI_swStatusTx - used to store in software status register,
+ 373          *  modified every function call - resets to zero.
+ 374          *
+ 375          * Theory:
+ 376          *  Allows the user and the API to read the Tx status register for error
+ 377          *  detection and flow control.
+ 378          *
+ 379          * Side Effects:
+ 380          *  Clear Tx status register of the component.
+ 381          *
+ 382          * Reentrant:
+ 383          *  No.
+ 384          *
+ 385          *******************************************************************************/
+ 386          uint8 LIS331HH_SPI_ReadTxStatus(void) 
+ 387          {
+ 388   1          uint8 tmpStatus;
+ 389   1      
+ 390   1          #if(LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED)
+                      /* Disable TX interrupt to protect global veriables */
+                      LIS331HH_SPI_DisableTxInt();
+              
+                      tmpStatus = LIS331HH_SPI_GET_STATUS_TX(LIS331HH_SPI_swStatusTx);
+                      LIS331HH_SPI_swStatusTx = 0u;
+              
+                      LIS331HH_SPI_EnableTxInt();
+              
+                  #else
+ 400   1      
+ 401   1              tmpStatus = LIS331HH_SPI_TX_STATUS_REG;
+ 402   1      
+ 403   1          #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED) */
+ 404   1      
+ 405   1          return(tmpStatus);
+ 406   1      }
+ 407          
+ 408          
+ 409          /*******************************************************************************
+ 410          * Function Name: LIS331HH_SPI_ReadRxStatus
+ 411          ********************************************************************************
+ 412          *
+ 413          * Summary:
+ 414          *  Read the Rx status register for the component.
+ 415          *
+ 416          * Parameters:
+ 417          *  None.
+ 418          *
+ 419          * Return:
+ 420          *  Contents of the Rx status register.
+ 421          *
+ 422          * Global variables:
+ 423          *  LIS331HH_SPI_swStatusRx - used to store in software Rx status register,
+ 424          *  modified every function call - resets to zero.
+ 425          *
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 8   
+
+ 426          * Theory:
+ 427          *  Allows the user and the API to read the Rx status register for error
+ 428          *  detection and flow control.
+ 429          *
+ 430          * Side Effects:
+ 431          *  Clear Rx status register of the component.
+ 432          *
+ 433          * Reentrant:
+ 434          *  No.
+ 435          *
+ 436          *******************************************************************************/
+ 437          uint8 LIS331HH_SPI_ReadRxStatus(void) 
+ 438          {
+ 439   1          uint8 tmpStatus;
+ 440   1      
+ 441   1          #if(LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED)
+                      /* Disable RX interrupt to protect global veriables */
+                      LIS331HH_SPI_DisableRxInt();
+              
+                      tmpStatus = LIS331HH_SPI_GET_STATUS_RX(LIS331HH_SPI_swStatusRx);
+                      LIS331HH_SPI_swStatusRx = 0u;
+              
+                      LIS331HH_SPI_EnableRxInt();
+              
+                  #else
+ 451   1      
+ 452   1              tmpStatus = LIS331HH_SPI_RX_STATUS_REG;
+ 453   1      
+ 454   1          #endif /* (LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED) */
+ 455   1      
+ 456   1          return(tmpStatus);
+ 457   1      }
+ 458          
+ 459          
+ 460          /*******************************************************************************
+ 461          * Function Name: LIS331HH_SPI_WriteTxData
+ 462          ********************************************************************************
+ 463          *
+ 464          * Summary:
+ 465          *  Write a byte of data to be sent across the SPI.
+ 466          *
+ 467          * Parameters:
+ 468          *  txDataByte: The data value to send across the SPI.
+ 469          *
+ 470          * Return:
+ 471          *  None.
+ 472          *
+ 473          * Global variables:
+ 474          *  LIS331HH_SPI_txBufferWrite - used for the account of the bytes which
+ 475          *  have been written down in the TX software buffer, modified every function
+ 476          *  call if TX Software Buffer is used.
+ 477          *  LIS331HH_SPI_txBufferRead - used for the account of the bytes which
+ 478          *  have been read from the TX software buffer.
+ 479          *  LIS331HH_SPI_txBuffer[LIS331HH_SPI_TX_BUFFER_SIZE] - used to store
+ 480          *  data to sending, modified every function call if TX Software Buffer is used.
+ 481          *
+ 482          * Theory:
+ 483          *  Allows the user to transmit any byte of data in a single transfer.
+ 484          *
+ 485          * Side Effects:
+ 486          *  If this function is called again before the previous byte is finished then
+ 487          *  the next byte will be appended to the transfer with no time between
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 9   
+
+ 488          *  the byte transfers. Clear Tx status register of the component.
+ 489          *
+ 490          * Reentrant:
+ 491          *  No.
+ 492          *
+ 493          *******************************************************************************/
+ 494          void LIS331HH_SPI_WriteTxData(uint8 txData) 
+ 495          {
+ 496   1          #if(LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED)
+              
+                      uint8 tempStatus;
+                      uint8 tmpTxBufferRead;
+              
+                      /* Block if TX buffer is FULL: don't overwrite */
+                      do
+                      {
+                          tmpTxBufferRead = LIS331HH_SPI_txBufferRead;
+                          if(0u == tmpTxBufferRead)
+                          {
+                              tmpTxBufferRead = (LIS331HH_SPI_TX_BUFFER_SIZE - 1u);
+                          }
+                          else
+                          {
+                              tmpTxBufferRead--;
+                          }
+              
+                      }while(tmpTxBufferRead == LIS331HH_SPI_txBufferWrite);
+              
+                      /* Disable TX interrupt to protect global veriables */
+                      LIS331HH_SPI_DisableTxInt();
+              
+                      tempStatus = LIS331HH_SPI_GET_STATUS_TX(LIS331HH_SPI_swStatusTx);
+                      LIS331HH_SPI_swStatusTx = tempStatus;
+              
+              
+                      if((LIS331HH_SPI_txBufferRead == LIS331HH_SPI_txBufferWrite) &&
+                         (0u != (LIS331HH_SPI_swStatusTx & LIS331HH_SPI_STS_TX_FIFO_NOT_FULL)))
+                      {
+                          /* Add directly to the TX FIFO */
+                          CY_SET_REG8(LIS331HH_SPI_TXDATA_PTR, txData);
+                      }
+                      else
+                      {
+                          /* Add to the TX software buffer */
+                          LIS331HH_SPI_txBufferWrite++;
+                          if(LIS331HH_SPI_txBufferWrite >= LIS331HH_SPI_TX_BUFFER_SIZE)
+                          {
+                              LIS331HH_SPI_txBufferWrite = 0u;
+                          }
+              
+                          if(LIS331HH_SPI_txBufferWrite == LIS331HH_SPI_txBufferRead)
+                          {
+                              LIS331HH_SPI_txBufferRead++;
+                              if(LIS331HH_SPI_txBufferRead >= LIS331HH_SPI_TX_BUFFER_SIZE)
+                              {
+                                  LIS331HH_SPI_txBufferRead = 0u;
+                              }
+                              LIS331HH_SPI_txBufferFull = 1u;
+                          }
+              
+                          LIS331HH_SPI_txBuffer[LIS331HH_SPI_txBufferWrite] = txData;
+              
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 10  
+
+                          LIS331HH_SPI_TX_STATUS_MASK_REG |= LIS331HH_SPI_STS_TX_FIFO_NOT_FULL;
+                      }
+              
+                      LIS331HH_SPI_EnableTxInt();
+              
+                  #else
+ 556   1      
+ 557   1              while(0u == (LIS331HH_SPI_TX_STATUS_REG & LIS331HH_SPI_STS_TX_FIFO_NOT_FULL))
+ 558   1              {
+ 559   2                  ; /* Wait for room in FIFO */
+ 560   2              }
+ 561   1      
+ 562   1              /* Put byte in TX FIFO */
+ 563   1              CY_SET_REG8(LIS331HH_SPI_TXDATA_PTR, txData);
+ 564   1      
+ 565   1          #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED) */
+ 566   1      }
+ 567          
+ 568          
+ 569          /*******************************************************************************
+ 570          * Function Name: LIS331HH_SPI_ReadRxData
+ 571          ********************************************************************************
+ 572          *
+ 573          * Summary:
+ 574          *  Read the next byte of data received across the SPI.
+ 575          *
+ 576          * Parameters:
+ 577          *  None.
+ 578          *
+ 579          * Return:
+ 580          *  The next byte of data read from the FIFO.
+ 581          *
+ 582          * Global variables:
+ 583          *  LIS331HH_SPI_rxBufferWrite - used for the account of the bytes which
+ 584          *  have been written down in the RX software buffer.
+ 585          *  LIS331HH_SPI_rxBufferRead - used for the account of the bytes which
+ 586          *  have been read from the RX software buffer, modified every function
+ 587          *  call if RX Software Buffer is used.
+ 588          *  LIS331HH_SPI_rxBuffer[LIS331HH_SPI_RX_BUFFER_SIZE] - used to store
+ 589          *  received data.
+ 590          *
+ 591          * Theory:
+ 592          *  Allows the user to read a byte of data received.
+ 593          *
+ 594          * Side Effects:
+ 595          *  Will return invalid data if the FIFO is empty. The user should Call
+ 596          *  GetRxBufferSize() and if it returns a non-zero value then it is safe to call
+ 597          *  ReadByte() function.
+ 598          *
+ 599          * Reentrant:
+ 600          *  No.
+ 601          *
+ 602          *******************************************************************************/
+ 603          uint8 LIS331HH_SPI_ReadRxData(void) 
+ 604          {
+ 605   1          uint8 rxData;
+ 606   1      
+ 607   1          #if(LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED)
+              
+                      /* Disable RX interrupt to protect global veriables */
+                      LIS331HH_SPI_DisableRxInt();
+              
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 11  
+
+                      if(LIS331HH_SPI_rxBufferRead != LIS331HH_SPI_rxBufferWrite)
+                      {
+                          if(0u == LIS331HH_SPI_rxBufferFull)
+                          {
+                              LIS331HH_SPI_rxBufferRead++;
+                              if(LIS331HH_SPI_rxBufferRead >= LIS331HH_SPI_RX_BUFFER_SIZE)
+                              {
+                                  LIS331HH_SPI_rxBufferRead = 0u;
+                              }
+                          }
+                          else
+                          {
+                              LIS331HH_SPI_rxBufferFull = 0u;
+                          }
+                      }
+              
+                      rxData = LIS331HH_SPI_rxBuffer[LIS331HH_SPI_rxBufferRead];
+              
+                      LIS331HH_SPI_EnableRxInt();
+              
+                  #else
+ 633   1      
+ 634   1              rxData = CY_GET_REG8(LIS331HH_SPI_RXDATA_PTR);
+ 635   1      
+ 636   1          #endif /* (LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED) */
+ 637   1      
+ 638   1          return(rxData);
+ 639   1      }
+ 640          
+ 641          
+ 642          /*******************************************************************************
+ 643          * Function Name: LIS331HH_SPI_GetRxBufferSize
+ 644          ********************************************************************************
+ 645          *
+ 646          * Summary:
+ 647          *  Returns the number of bytes/words of data currently held in the RX buffer.
+ 648          *  If RX Software Buffer not used then function return 0 if FIFO empty or 1 if
+ 649          *  FIFO not empty. In another case function return size of RX Software Buffer.
+ 650          *
+ 651          * Parameters:
+ 652          *  None.
+ 653          *
+ 654          * Return:
+ 655          *  Integer count of the number of bytes/words in the RX buffer.
+ 656          *
+ 657          * Global variables:
+ 658          *  LIS331HH_SPI_rxBufferWrite - used for the account of the bytes which
+ 659          *  have been written down in the RX software buffer.
+ 660          *  LIS331HH_SPI_rxBufferRead - used for the account of the bytes which
+ 661          *  have been read from the RX software buffer.
+ 662          *
+ 663          * Side Effects:
+ 664          *  Clear status register of the component.
+ 665          *
+ 666          *******************************************************************************/
+ 667          uint8 LIS331HH_SPI_GetRxBufferSize(void) 
+ 668          {
+ 669   1          uint8 size;
+ 670   1      
+ 671   1          #if(LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED)
+              
+                      /* Disable RX interrupt to protect global veriables */
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 12  
+
+                      LIS331HH_SPI_DisableRxInt();
+              
+                      if(LIS331HH_SPI_rxBufferRead == LIS331HH_SPI_rxBufferWrite)
+                      {
+                          size = 0u;
+                      }
+                      else if(LIS331HH_SPI_rxBufferRead < LIS331HH_SPI_rxBufferWrite)
+                      {
+                          size = (LIS331HH_SPI_rxBufferWrite - LIS331HH_SPI_rxBufferRead);
+                      }
+                      else
+                      {
+                          size = (LIS331HH_SPI_RX_BUFFER_SIZE - LIS331HH_SPI_rxBufferRead) + LIS331HH_SPI_rxBufferWrite;
+                      }
+              
+                      LIS331HH_SPI_EnableRxInt();
+              
+                  #else
+ 692   1      
+ 693   1              /* We can only know if there is data in the RX FIFO */
+ 694   1              size = (0u != (LIS331HH_SPI_RX_STATUS_REG & LIS331HH_SPI_STS_RX_FIFO_NOT_EMPTY)) ? 1u : 0u;
+ 695   1      
+ 696   1          #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED) */
+ 697   1      
+ 698   1          return(size);
+ 699   1      }
+ 700          
+ 701          
+ 702          /*******************************************************************************
+ 703          * Function Name: LIS331HH_SPI_GetTxBufferSize
+ 704          ********************************************************************************
+ 705          *
+ 706          * Summary:
+ 707          *  Returns the number of bytes/words of data currently held in the TX buffer.
+ 708          *  If TX Software Buffer not used then function return 0 - if FIFO empty, 1 - if
+ 709          *  FIFO not full, 4 - if FIFO full. In another case function return size of TX
+ 710          *  Software Buffer.
+ 711          *
+ 712          * Parameters:
+ 713          *  None.
+ 714          *
+ 715          * Return:
+ 716          *  Integer count of the number of bytes/words in the TX buffer.
+ 717          *
+ 718          * Global variables:
+ 719          *  LIS331HH_SPI_txBufferWrite - used for the account of the bytes which
+ 720          *  have been written down in the TX software buffer.
+ 721          *  LIS331HH_SPI_txBufferRead - used for the account of the bytes which
+ 722          *  have been read from the TX software buffer.
+ 723          *
+ 724          * Side Effects:
+ 725          *  Clear status register of the component.
+ 726          *
+ 727          *******************************************************************************/
+ 728          uint8  LIS331HH_SPI_GetTxBufferSize(void) 
+ 729          {
+ 730   1          uint8 size;
+ 731   1      
+ 732   1          #if(LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED)
+                      /* Disable TX interrupt to protect global veriables */
+                      LIS331HH_SPI_DisableTxInt();
+              
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 13  
+
+                      if(LIS331HH_SPI_txBufferRead == LIS331HH_SPI_txBufferWrite)
+                      {
+                          size = 0u;
+                      }
+                      else if(LIS331HH_SPI_txBufferRead < LIS331HH_SPI_txBufferWrite)
+                      {
+                          size = (LIS331HH_SPI_txBufferWrite - LIS331HH_SPI_txBufferRead);
+                      }
+                      else
+                      {
+                          size = (LIS331HH_SPI_TX_BUFFER_SIZE - LIS331HH_SPI_txBufferRead) + LIS331HH_SPI_txBufferWrite;
+                      }
+              
+                      LIS331HH_SPI_EnableTxInt();
+              
+                  #else
+ 752   1      
+ 753   1              size = LIS331HH_SPI_TX_STATUS_REG;
+ 754   1      
+ 755   1              if(0u != (size & LIS331HH_SPI_STS_TX_FIFO_EMPTY))
+ 756   1              {
+ 757   2                  size = 0u;
+ 758   2              }
+ 759   1              else if(0u != (size & LIS331HH_SPI_STS_TX_FIFO_NOT_FULL))
+ 760   1              {
+ 761   2                  size = 1u;
+ 762   2              }
+ 763   1              else
+ 764   1              {
+ 765   2                  size = LIS331HH_SPI_FIFO_SIZE;
+ 766   2              }
+ 767   1      
+ 768   1          #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED) */
+ 769   1      
+ 770   1          return(size);
+ 771   1      }
+ 772          
+ 773          
+ 774          /*******************************************************************************
+ 775          * Function Name: LIS331HH_SPI_ClearRxBuffer
+ 776          ********************************************************************************
+ 777          *
+ 778          * Summary:
+ 779          *  Clear the RX RAM buffer by setting the read and write pointers both to zero.
+ 780          *
+ 781          * Parameters:
+ 782          *  None.
+ 783          *
+ 784          * Return:
+ 785          *  None.
+ 786          *
+ 787          * Global variables:
+ 788          *  LIS331HH_SPI_rxBufferWrite - used for the account of the bytes which
+ 789          *  have been written down in the RX software buffer, modified every function
+ 790          *  call - resets to zero.
+ 791          *  LIS331HH_SPI_rxBufferRead - used for the account of the bytes which
+ 792          *  have been read from the RX software buffer, modified every function call -
+ 793          *  resets to zero.
+ 794          *
+ 795          * Theory:
+ 796          *  Setting the pointers to zero makes the system believe there is no data to
+ 797          *  read and writing will resume at address 0 overwriting any data that may have
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 14  
+
+ 798          *  remained in the RAM.
+ 799          *
+ 800          * Side Effects:
+ 801          *  Any received data not read from the RAM buffer will be lost when overwritten.
+ 802          *
+ 803          * Reentrant:
+ 804          *  No.
+ 805          *
+ 806          *******************************************************************************/
+ 807          void LIS331HH_SPI_ClearRxBuffer(void) 
+ 808          {
+ 809   1          /* Clear Hardware RX FIFO */
+ 810   1          while(0u !=(LIS331HH_SPI_RX_STATUS_REG & LIS331HH_SPI_STS_RX_FIFO_NOT_EMPTY))
+ 811   1          {
+ 812   2              (void) CY_GET_REG8(LIS331HH_SPI_RXDATA_PTR);
+ 813   2          }
+ 814   1      
+ 815   1          #if(LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED)
+                      /* Disable RX interrupt to protect global veriables */
+                      LIS331HH_SPI_DisableRxInt();
+              
+                      LIS331HH_SPI_rxBufferFull  = 0u;
+                      LIS331HH_SPI_rxBufferRead  = 0u;
+                      LIS331HH_SPI_rxBufferWrite = 0u;
+              
+                      LIS331HH_SPI_EnableRxInt();
+                  #endif /* (LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED) */
+ 825   1      }
+ 826          
+ 827          
+ 828          /*******************************************************************************
+ 829          * Function Name: LIS331HH_SPI_ClearTxBuffer
+ 830          ********************************************************************************
+ 831          *
+ 832          * Summary:
+ 833          *  Clear the TX RAM buffer by setting the read and write pointers both to zero.
+ 834          *
+ 835          * Parameters:
+ 836          *  None.
+ 837          *
+ 838          * Return:
+ 839          *  None.
+ 840          *
+ 841          * Global variables:
+ 842          *  LIS331HH_SPI_txBufferWrite - used for the account of the bytes which
+ 843          *  have been written down in the TX software buffer, modified every function
+ 844          *  call - resets to zero.
+ 845          *  LIS331HH_SPI_txBufferRead - used for the account of the bytes which
+ 846          *  have been read from the TX software buffer, modified every function call -
+ 847          *  resets to zero.
+ 848          *
+ 849          * Theory:
+ 850          *  Setting the pointers to zero makes the system believe there is no data to
+ 851          *  read and writing will resume at address 0 overwriting any data that may have
+ 852          *  remained in the RAM.
+ 853          *
+ 854          * Side Effects:
+ 855          *  Any data not yet transmitted from the RAM buffer will be lost when
+ 856          *  overwritten.
+ 857          *
+ 858          * Reentrant:
+ 859          *  No.
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 15  
+
+ 860          *
+ 861          *******************************************************************************/
+ 862          void LIS331HH_SPI_ClearTxBuffer(void) 
+ 863          {
+ 864   1          uint8 enableInterrupts;
+ 865   1      
+ 866   1          enableInterrupts = CyEnterCriticalSection();
+ 867   1          /* Clear TX FIFO */
+ 868   1          LIS331HH_SPI_AUX_CONTROL_DP0_REG |= ((uint8)  LIS331HH_SPI_TX_FIFO_CLR);
+ 869   1          LIS331HH_SPI_AUX_CONTROL_DP0_REG &= ((uint8) ~LIS331HH_SPI_TX_FIFO_CLR);
+ 870   1      
+ 871   1          #if(LIS331HH_SPI_USE_SECOND_DATAPATH)
+                      /* Clear TX FIFO for 2nd Datapath */
+                      LIS331HH_SPI_AUX_CONTROL_DP1_REG |= ((uint8)  LIS331HH_SPI_TX_FIFO_CLR);
+                      LIS331HH_SPI_AUX_CONTROL_DP1_REG &= ((uint8) ~LIS331HH_SPI_TX_FIFO_CLR);
+                  #endif /* (LIS331HH_SPI_USE_SECOND_DATAPATH) */
+ 876   1          CyExitCriticalSection(enableInterrupts);
+ 877   1      
+ 878   1          #if(LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED)
+                      /* Disable TX interrupt to protect global veriables */
+                      LIS331HH_SPI_DisableTxInt();
+              
+                      LIS331HH_SPI_txBufferFull  = 0u;
+                      LIS331HH_SPI_txBufferRead  = 0u;
+                      LIS331HH_SPI_txBufferWrite = 0u;
+              
+                      /* Buffer is EMPTY: disable TX FIFO NOT FULL interrupt */
+                      LIS331HH_SPI_TX_STATUS_MASK_REG &= ((uint8) ~LIS331HH_SPI_STS_TX_FIFO_NOT_FULL);
+              
+                      LIS331HH_SPI_EnableTxInt();
+                  #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED) */
+ 891   1      }
+ 892          
+ 893          
+ 894          #if(0u != LIS331HH_SPI_BIDIRECTIONAL_MODE)
+                  /*******************************************************************************
+                  * Function Name: LIS331HH_SPI_TxEnable
+                  ********************************************************************************
+                  *
+                  * Summary:
+                  *  If the SPI master is configured to use a single bi-directional pin then this
+                  *  will set the bi-directional pin to transmit.
+                  *
+                  * Parameters:
+                  *  None.
+                  *
+                  * Return:
+                  *  None.
+                  *
+                  *******************************************************************************/
+                  void LIS331HH_SPI_TxEnable(void) 
+                  {
+                      LIS331HH_SPI_CONTROL_REG |= LIS331HH_SPI_CTRL_TX_SIGNAL_EN;
+                  }
+              
+              
+                  /*******************************************************************************
+                  * Function Name: LIS331HH_SPI_TxDisable
+                  ********************************************************************************
+                  *
+                  * Summary:
+                  *  If the SPI master is configured to use a single bi-directional pin then this
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 16  
+
+                  *  will set the bi-directional pin to receive.
+                  *
+                  * Parameters:
+                  *  None.
+                  *
+                  * Return:
+                  *  None.
+                  *
+                  *******************************************************************************/
+                  void LIS331HH_SPI_TxDisable(void) 
+                  {
+                      LIS331HH_SPI_CONTROL_REG &= ((uint8) ~LIS331HH_SPI_CTRL_TX_SIGNAL_EN);
+                  }
+              
+              #endif /* (0u != LIS331HH_SPI_BIDIRECTIONAL_MODE) */
+ 937          
+ 938          
+ 939          /*******************************************************************************
+ 940          * Function Name: LIS331HH_SPI_PutArray
+ 941          ********************************************************************************
+ 942          *
+ 943          * Summary:
+ 944          *  Write available data from ROM/RAM to the TX buffer while space is available
+ 945          *  in the TX buffer. Keep trying until all data is passed to the TX buffer.
+ 946          *
+ 947          * Parameters:
+ 948          *  *buffer: Pointer to the location in RAM containing the data to send
+ 949          *  byteCount: The number of bytes to move to the transmit buffer.
+ 950          *
+ 951          * Return:
+ 952          *  None.
+ 953          *
+ 954          * Side Effects:
+ 955          *  Will stay in this routine until all data has been sent.  May get locked in
+ 956          *  this loop if data is not being initiated by the master if there is not
+ 957          *  enough room in the TX FIFO.
+ 958          *
+ 959          * Reentrant:
+ 960          *  No.
+ 961          *
+ 962          *******************************************************************************/
+ 963          void LIS331HH_SPI_PutArray(const uint8 buffer[], uint8 byteCount)
+ 964                                                                                    
+ 965          {
+ 966   1          uint8 bufIndex;
+ 967   1      
+ 968   1          bufIndex = 0u;
+ 969   1      
+ 970   1          while(byteCount > 0u)
+ 971   1          {
+ 972   2              LIS331HH_SPI_WriteTxData(buffer[bufIndex]);
+ 973   2              bufIndex++;
+ 974   2              byteCount--;
+ 975   2          }
+ 976   1      }
+ 977          
+ 978          
+ 979          /*******************************************************************************
+ 980          * Function Name: LIS331HH_SPI_ClearFIFO
+ 981          ********************************************************************************
+ 982          *
+ 983          * Summary:
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 17  
+
+ 984          *  Clear the RX and TX FIFO's of all data for a fresh start.
+ 985          *
+ 986          * Parameters:
+ 987          *  None.
+ 988          *
+ 989          * Return:
+ 990          *  None.
+ 991          *
+ 992          * Side Effects:
+ 993          *  Clear status register of the component.
+ 994          *
+ 995          *******************************************************************************/
+ 996          void LIS331HH_SPI_ClearFIFO(void) 
+ 997          {
+ 998   1          uint8 enableInterrupts;
+ 999   1      
+1000   1          /* Clear Hardware RX FIFO */
+1001   1          while(0u !=(LIS331HH_SPI_RX_STATUS_REG & LIS331HH_SPI_STS_RX_FIFO_NOT_EMPTY))
+1002   1          {
+1003   2              (void) CY_GET_REG8(LIS331HH_SPI_RXDATA_PTR);
+1004   2          }
+1005   1      
+1006   1          enableInterrupts = CyEnterCriticalSection();
+1007   1          /* Clear TX FIFO */
+1008   1          LIS331HH_SPI_AUX_CONTROL_DP0_REG |= ((uint8)  LIS331HH_SPI_TX_FIFO_CLR);
+1009   1          LIS331HH_SPI_AUX_CONTROL_DP0_REG &= ((uint8) ~LIS331HH_SPI_TX_FIFO_CLR);
+1010   1      
+1011   1          #if(LIS331HH_SPI_USE_SECOND_DATAPATH)
+                      /* Clear TX FIFO for 2nd Datapath */
+                      LIS331HH_SPI_AUX_CONTROL_DP1_REG |= ((uint8)  LIS331HH_SPI_TX_FIFO_CLR);
+                      LIS331HH_SPI_AUX_CONTROL_DP1_REG &= ((uint8) ~LIS331HH_SPI_TX_FIFO_CLR);
+                  #endif /* (LIS331HH_SPI_USE_SECOND_DATAPATH) */
+1016   1          CyExitCriticalSection(enableInterrupts);
+1017   1      }
+1018          
+1019          
+1020          /* Following functions are for version Compatibility, they are obsolete.
+1021          *  Please do not use it in new projects.
+1022          */
+1023          
+1024          
+1025          /*******************************************************************************
+1026          * Function Name: LIS331HH_SPI_EnableInt
+1027          ********************************************************************************
+1028          *
+1029          * Summary:
+1030          *  Enable internal interrupt generation.
+1031          *
+1032          * Parameters:
+1033          *  None.
+1034          *
+1035          * Return:
+1036          *  None.
+1037          *
+1038          * Theory:
+1039          *  Enable the internal interrupt output -or- the interrupt component itself.
+1040          *
+1041          *******************************************************************************/
+1042          void LIS331HH_SPI_EnableInt(void) 
+1043          {
+1044   1          LIS331HH_SPI_EnableRxInt();
+1045   1          LIS331HH_SPI_EnableTxInt();
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 18  
+
+1046   1      }
+1047          
+1048          
+1049          /*******************************************************************************
+1050          * Function Name: LIS331HH_SPI_DisableInt
+1051          ********************************************************************************
+1052          *
+1053          * Summary:
+1054          *  Disable internal interrupt generation.
+1055          *
+1056          * Parameters:
+1057          *  None.
+1058          *
+1059          * Return:
+1060          *  None.
+1061          *
+1062          * Theory:
+1063          *  Disable the internal interrupt output -or- the interrupt component itself.
+1064          *
+1065          *******************************************************************************/
+1066          void LIS331HH_SPI_DisableInt(void) 
+1067          {
+1068   1          LIS331HH_SPI_DisableTxInt();
+1069   1          LIS331HH_SPI_DisableRxInt();
+1070   1      }
+1071          
+1072          
+1073          /*******************************************************************************
+1074          * Function Name: LIS331HH_SPI_SetInterruptMode
+1075          ********************************************************************************
+1076          *
+1077          * Summary:
+1078          *  Configure which status bits trigger an interrupt event.
+1079          *
+1080          * Parameters:
+1081          *  intSrc: An or'd combination of the desired status bit masks (defined in the
+1082          *  header file).
+1083          *
+1084          * Return:
+1085          *  None.
+1086          *
+1087          * Theory:
+1088          *  Enables the output of specific status bits to the interrupt controller.
+1089          *
+1090          *******************************************************************************/
+1091          void LIS331HH_SPI_SetInterruptMode(uint8 intSrc) 
+1092          {
+1093   1          LIS331HH_SPI_TX_STATUS_MASK_REG  = (intSrc & ((uint8) ~LIS331HH_SPI_STS_SPI_IDLE));
+1094   1          LIS331HH_SPI_RX_STATUS_MASK_REG  =  intSrc;
+1095   1      }
+1096          
+1097          
+1098          /*******************************************************************************
+1099          * Function Name: LIS331HH_SPI_ReadStatus
+1100          ********************************************************************************
+1101          *
+1102          * Summary:
+1103          *  Read the status register for the component.
+1104          *
+1105          * Parameters:
+1106          *  None.
+1107          *
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 19  
+
+1108          * Return:
+1109          *  Contents of the status register.
+1110          *
+1111          * Global variables:
+1112          *  LIS331HH_SPI_swStatus - used to store in software status register,
+1113          *  modified every function call - resets to zero.
+1114          *
+1115          * Theory:
+1116          *  Allows the user and the API to read the status register for error detection
+1117          *  and flow control.
+1118          *
+1119          * Side Effects:
+1120          *  Clear status register of the component.
+1121          *
+1122          * Reentrant:
+1123          *  No.
+1124          *
+1125          *******************************************************************************/
+1126          uint8 LIS331HH_SPI_ReadStatus(void) 
+1127          {
+1128   1          uint8 tmpStatus;
+1129   1      
+1130   1          #if(LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED || LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED)
+              
+                      LIS331HH_SPI_DisableInt();
+              
+                      tmpStatus  = LIS331HH_SPI_GET_STATUS_RX(LIS331HH_SPI_swStatusRx);
+                      tmpStatus |= LIS331HH_SPI_GET_STATUS_TX(LIS331HH_SPI_swStatusTx);
+                      tmpStatus &= ((uint8) ~LIS331HH_SPI_STS_SPI_IDLE);
+              
+                      LIS331HH_SPI_swStatusTx = 0u;
+                      LIS331HH_SPI_swStatusRx = 0u;
+              
+                      LIS331HH_SPI_EnableInt();
+              
+                  #else
+1144   1      
+1145   1              tmpStatus  = LIS331HH_SPI_RX_STATUS_REG;
+1146   1              tmpStatus |= LIS331HH_SPI_TX_STATUS_REG;
+1147   1              tmpStatus &= ((uint8) ~LIS331HH_SPI_STS_SPI_IDLE);
+1148   1      
+1149   1          #endif /* (LIS331HH_SPI_TX_SOFTWARE_BUF_ENABLED || LIS331HH_SPI_RX_SOFTWARE_BUF_ENABLED) */
+1150   1      
+1151   1          return(tmpStatus);
+1152   1      }
+1153          
+1154          
+1155          /* [] END OF FILE */
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 20  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION LIS331HH_SPI_Init (BEGIN)
+                                           ; SOURCE LINE # 63
+                                           ; SOURCE LINE # 64
+                                           ; SOURCE LINE # 66
+0000 906485            MOV     DPTR,#06485H
+0003 740F              MOV     A,#0FH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 83
+0006 120000      R     LCALL   LIS331HH_SPI_ClearFIFO
+                                           ; SOURCE LINE # 97
+0009 120000      R     LCALL   LIS331HH_SPI_ReadTxStatus
+                                           ; SOURCE LINE # 98
+000C 120000      R     LCALL   LIS331HH_SPI_ReadRxStatus
+                                           ; SOURCE LINE # 101
+000F 906486            MOV     DPTR,#06486H
+0012 E4                CLR     A
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 102
+0014 906587            MOV     DPTR,#06587H
+0017 E4                CLR     A
+0018 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+0019 22                RET     
+             ; FUNCTION LIS331HH_SPI_Init (END)
+
+             ; FUNCTION LIS331HH_SPI_Enable (BEGIN)
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+                                           ; SOURCE LINE # 124
+0000 120000      E     LCALL   CyEnterCriticalSection
+0003 900000      R     MOV     DPTR,#enableInterrupts
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 125
+0008 906495            MOV     DPTR,#06495H
+000B E0                MOVX    A,@DPTR
+000C FF                MOV     R7,A
+000D EF                MOV     A,R7
+000E 4420              ORL     A,#020H
+0010 FF                MOV     R7,A
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 126
+0013 906496            MOV     DPTR,#06496H
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 EF                MOV     A,R7
+0019 4410              ORL     A,#010H
+001B FF                MOV     R7,A
+001C EF                MOV     A,R7
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 127
+001E 906597            MOV     DPTR,#06597H
+0021 E0                MOVX    A,@DPTR
+0022 FF                MOV     R7,A
+0023 EF                MOV     A,R7
+0024 4410              ORL     A,#010H
+0026 FF                MOV     R7,A
+0027 EF                MOV     A,R7
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 21  
+
+0028 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 128
+0029 900000      R     MOV     DPTR,#enableInterrupts
+002C E0                MOVX    A,@DPTR
+002D FF                MOV     R7,A
+002E 120000      E     LCALL   _CyExitCriticalSection
+                                           ; SOURCE LINE # 131
+0031 120000      E     LCALL   LIS331HH_SPI_IntClock_Start
+                                           ; SOURCE LINE # 134
+0034 120000      R     LCALL   LIS331HH_SPI_EnableTxInt
+                                           ; SOURCE LINE # 135
+0037 120000      R     LCALL   LIS331HH_SPI_EnableRxInt
+                                           ; SOURCE LINE # 136
+003A 22                RET     
+             ; FUNCTION LIS331HH_SPI_Enable (END)
+
+             ; FUNCTION LIS331HH_SPI_Start (BEGIN)
+                                           ; SOURCE LINE # 163
+                                           ; SOURCE LINE # 164
+                                           ; SOURCE LINE # 165
+0000 900000      R     MOV     DPTR,#LIS331HH_SPI_initVar
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 7009              JNZ     ?C0003
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+0008 120000      R     LCALL   LIS331HH_SPI_Init
+                                           ; SOURCE LINE # 168
+000B 900000      R     MOV     DPTR,#LIS331HH_SPI_initVar
+000E 7401              MOV     A,#01H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 169
+0011         ?C0003:
+                                           ; SOURCE LINE # 171
+0011 120000      R     LCALL   LIS331HH_SPI_Enable
+                                           ; SOURCE LINE # 172
+0014 22                RET     
+             ; FUNCTION LIS331HH_SPI_Start (END)
+
+             ; FUNCTION LIS331HH_SPI_Stop (BEGIN)
+                                           ; SOURCE LINE # 192
+                                           ; SOURCE LINE # 193
+                                           ; SOURCE LINE # 196
+0000 120000      E     LCALL   CyEnterCriticalSection
+0003 900000      R     MOV     DPTR,#enableInterrupts
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 197
+0008 906496            MOV     DPTR,#06496H
+000B E0                MOVX    A,@DPTR
+000C FF                MOV     R7,A
+000D EF                MOV     A,R7
+000E 54EF              ANL     A,#0EFH
+0010 FF                MOV     R7,A
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 198
+0013 906597            MOV     DPTR,#06597H
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 EF                MOV     A,R7
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 22  
+
+0019 54EF              ANL     A,#0EFH
+001B FF                MOV     R7,A
+001C EF                MOV     A,R7
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 199
+001E 900000      R     MOV     DPTR,#enableInterrupts
+0021 E0                MOVX    A,@DPTR
+0022 FF                MOV     R7,A
+0023 120000      E     LCALL   _CyExitCriticalSection
+                                           ; SOURCE LINE # 202
+0026 120000      E     LCALL   LIS331HH_SPI_IntClock_Stop
+                                           ; SOURCE LINE # 205
+0029 120000      R     LCALL   LIS331HH_SPI_DisableTxInt
+                                           ; SOURCE LINE # 206
+002C 120000      R     LCALL   LIS331HH_SPI_DisableRxInt
+                                           ; SOURCE LINE # 207
+002F 22                RET     
+             ; FUNCTION LIS331HH_SPI_Stop (END)
+
+             ; FUNCTION LIS331HH_SPI_EnableTxInt (BEGIN)
+                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 228
+                                           ; SOURCE LINE # 232
+0000 22                RET     
+             ; FUNCTION LIS331HH_SPI_EnableTxInt (END)
+
+             ; FUNCTION LIS331HH_SPI_EnableRxInt (BEGIN)
+                                           ; SOURCE LINE # 252
+                                           ; SOURCE LINE # 253
+                                           ; SOURCE LINE # 257
+0000 22                RET     
+             ; FUNCTION LIS331HH_SPI_EnableRxInt (END)
+
+             ; FUNCTION LIS331HH_SPI_DisableTxInt (BEGIN)
+                                           ; SOURCE LINE # 277
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 282
+0000 22                RET     
+             ; FUNCTION LIS331HH_SPI_DisableTxInt (END)
+
+             ; FUNCTION LIS331HH_SPI_DisableRxInt (BEGIN)
+                                           ; SOURCE LINE # 302
+                                           ; SOURCE LINE # 303
+                                           ; SOURCE LINE # 307
+0000 22                RET     
+             ; FUNCTION LIS331HH_SPI_DisableRxInt (END)
+
+             ; FUNCTION _LIS331HH_SPI_SetTxInterruptMode (BEGIN)
+                                           ; SOURCE LINE # 328
+0000 900000      R     MOV     DPTR,#intSrc
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 329
+                                           ; SOURCE LINE # 330
+0005 900000      R     MOV     DPTR,#intSrc
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A 906486            MOV     DPTR,#06486H
+000D EF                MOV     A,R7
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 331
+000F 22                RET     
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 23  
+
+             ; FUNCTION _LIS331HH_SPI_SetTxInterruptMode (END)
+
+             ; FUNCTION _LIS331HH_SPI_SetRxInterruptMode (BEGIN)
+                                           ; SOURCE LINE # 352
+0000 900000      R     MOV     DPTR,#intSrc
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 353
+                                           ; SOURCE LINE # 354
+0005 900000      R     MOV     DPTR,#intSrc
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A 906587            MOV     DPTR,#06587H
+000D EF                MOV     A,R7
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 355
+000F 22                RET     
+             ; FUNCTION _LIS331HH_SPI_SetRxInterruptMode (END)
+
+             ; FUNCTION LIS331HH_SPI_ReadTxStatus (BEGIN)
+                                           ; SOURCE LINE # 386
+                                           ; SOURCE LINE # 387
+                                           ; SOURCE LINE # 401
+0000 906466            MOV     DPTR,#06466H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900000      R     MOV     DPTR,#tmpStatus
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 405
+000A 900000      R     MOV     DPTR,#tmpStatus
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+                                           ; SOURCE LINE # 406
+000F         ?C0012:
+000F 22                RET     
+             ; FUNCTION LIS331HH_SPI_ReadTxStatus (END)
+
+             ; FUNCTION LIS331HH_SPI_ReadRxStatus (BEGIN)
+                                           ; SOURCE LINE # 437
+                                           ; SOURCE LINE # 438
+                                           ; SOURCE LINE # 452
+0000 906567            MOV     DPTR,#06567H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900000      R     MOV     DPTR,#tmpStatus
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 456
+000A 900000      R     MOV     DPTR,#tmpStatus
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+                                           ; SOURCE LINE # 457
+000F         ?C0013:
+000F 22                RET     
+             ; FUNCTION LIS331HH_SPI_ReadRxStatus (END)
+
+             ; FUNCTION _LIS331HH_SPI_WriteTxData (BEGIN)
+                                           ; SOURCE LINE # 494
+0000 900000      R     MOV     DPTR,#txData
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 24  
+
+                                           ; SOURCE LINE # 495
+0005         ?C0014:
+                                           ; SOURCE LINE # 557
+0005 906466            MOV     DPTR,#06466H
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 30E2F7            JNB     ACC.2,?C0014
+                                           ; SOURCE LINE # 558
+                                           ; SOURCE LINE # 560
+000E         ?C0015:
+                                           ; SOURCE LINE # 563
+000E 900000      R     MOV     DPTR,#txData
+0011 E0                MOVX    A,@DPTR
+0012 FF                MOV     R7,A
+0013 906446            MOV     DPTR,#06446H
+0016 EF                MOV     A,R7
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 566
+0018 22                RET     
+             ; FUNCTION _LIS331HH_SPI_WriteTxData (END)
+
+             ; FUNCTION LIS331HH_SPI_ReadRxData (BEGIN)
+                                           ; SOURCE LINE # 603
+                                           ; SOURCE LINE # 604
+                                           ; SOURCE LINE # 634
+0000 906456            MOV     DPTR,#06456H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900000      R     MOV     DPTR,#rxData
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 638
+000A 900000      R     MOV     DPTR,#rxData
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+                                           ; SOURCE LINE # 639
+000F         ?C0017:
+000F 22                RET     
+             ; FUNCTION LIS331HH_SPI_ReadRxData (END)
+
+             ; FUNCTION LIS331HH_SPI_GetRxBufferSize (BEGIN)
+                                           ; SOURCE LINE # 667
+                                           ; SOURCE LINE # 668
+                                           ; SOURCE LINE # 694
+0000 906567            MOV     DPTR,#06567H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 30E504            JNB     ACC.5,?C0018
+0009 7F01              MOV     R7,#01H
+000B 8002              SJMP    ?C0019
+000D         ?C0018:
+000D 7F00              MOV     R7,#00H
+000F         ?C0019:
+000F 900000      R     MOV     DPTR,#size
+0012 EF                MOV     A,R7
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 698
+0014 900000      R     MOV     DPTR,#size
+0017 E0                MOVX    A,@DPTR
+0018 FF                MOV     R7,A
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 25  
+
+                                           ; SOURCE LINE # 699
+0019         ?C0020:
+0019 22                RET     
+             ; FUNCTION LIS331HH_SPI_GetRxBufferSize (END)
+
+             ; FUNCTION LIS331HH_SPI_GetTxBufferSize (BEGIN)
+                                           ; SOURCE LINE # 728
+                                           ; SOURCE LINE # 729
+                                           ; SOURCE LINE # 753
+0000 906466            MOV     DPTR,#06466H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900000      R     MOV     DPTR,#size
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 755
+000A 900000      R     MOV     DPTR,#size
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F EF                MOV     A,R7
+0010 30E107            JNB     ACC.1,?C0021
+                                           ; SOURCE LINE # 756
+                                           ; SOURCE LINE # 757
+0013 900000      R     MOV     DPTR,#size
+0016 E4                CLR     A
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 758
+0018 8017              SJMP    ?C0022
+001A         ?C0021:
+                                           ; SOURCE LINE # 759
+001A 900000      R     MOV     DPTR,#size
+001D E0                MOVX    A,@DPTR
+001E FF                MOV     R7,A
+001F EF                MOV     A,R7
+0020 30E208            JNB     ACC.2,?C0023
+                                           ; SOURCE LINE # 760
+                                           ; SOURCE LINE # 761
+0023 900000      R     MOV     DPTR,#size
+0026 7401              MOV     A,#01H
+0028 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 762
+0029 8006              SJMP    ?C0022
+002B         ?C0023:
+                                           ; SOURCE LINE # 764
+                                           ; SOURCE LINE # 765
+002B 900000      R     MOV     DPTR,#size
+002E 7404              MOV     A,#04H
+0030 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 766
+0031         ?C0022:
+                                           ; SOURCE LINE # 770
+0031 900000      R     MOV     DPTR,#size
+0034 E0                MOVX    A,@DPTR
+0035 FF                MOV     R7,A
+                                           ; SOURCE LINE # 771
+0036         ?C0025:
+0036 22                RET     
+             ; FUNCTION LIS331HH_SPI_GetTxBufferSize (END)
+
+             ; FUNCTION LIS331HH_SPI_ClearRxBuffer (BEGIN)
+                                           ; SOURCE LINE # 807
+                                           ; SOURCE LINE # 808
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 26  
+
+0000         ?C0026:
+                                           ; SOURCE LINE # 810
+0000 906567            MOV     DPTR,#06567H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 30E507            JNB     ACC.5,?C0028
+                                           ; SOURCE LINE # 811
+                                           ; SOURCE LINE # 812
+0009 906456            MOV     DPTR,#06456H
+000C E0                MOVX    A,@DPTR
+000D FF                MOV     R7,A
+                                           ; SOURCE LINE # 813
+000E 80F0              SJMP    ?C0026
+                                           ; SOURCE LINE # 825
+0010         ?C0028:
+0010 22                RET     
+             ; FUNCTION LIS331HH_SPI_ClearRxBuffer (END)
+
+             ; FUNCTION LIS331HH_SPI_ClearTxBuffer (BEGIN)
+                                           ; SOURCE LINE # 862
+                                           ; SOURCE LINE # 863
+                                           ; SOURCE LINE # 866
+0000 120000      E     LCALL   CyEnterCriticalSection
+0003 900000      R     MOV     DPTR,#enableInterrupts
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 868
+0008 906496            MOV     DPTR,#06496H
+000B E0                MOVX    A,@DPTR
+000C FF                MOV     R7,A
+000D EF                MOV     A,R7
+000E 4401              ORL     A,#01H
+0010 FF                MOV     R7,A
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 869
+0013 906496            MOV     DPTR,#06496H
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 EF                MOV     A,R7
+0019 54FE              ANL     A,#0FEH
+001B FF                MOV     R7,A
+001C EF                MOV     A,R7
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 876
+001E 900000      R     MOV     DPTR,#enableInterrupts
+0021 E0                MOVX    A,@DPTR
+0022 FF                MOV     R7,A
+0023 120000      E     LCALL   _CyExitCriticalSection
+                                           ; SOURCE LINE # 891
+0026 22                RET     
+             ; FUNCTION LIS331HH_SPI_ClearTxBuffer (END)
+
+             ; FUNCTION _LIS331HH_SPI_PutArray (BEGIN)
+                                           ; SOURCE LINE # 963
+0000 900000      R     MOV     DPTR,#buffer
+0003 120000      E     LCALL   ?C?PSTXDATA
+0006 900000      R     MOV     DPTR,#byteCount
+0009 ED                MOV     A,R5
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 965
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 27  
+
+                                           ; SOURCE LINE # 968
+000B 900000      R     MOV     DPTR,#bufIndex
+000E E4                CLR     A
+000F F0                MOVX    @DPTR,A
+0010         ?C0030:
+                                           ; SOURCE LINE # 970
+0010 900000      R     MOV     DPTR,#byteCount
+0013 E0                MOVX    A,@DPTR
+0014 FF                MOV     R7,A
+0015 EF                MOV     A,R7
+0016 D3                SETB    C
+0017 9400              SUBB    A,#00H
+0019 4026              JC      ?C0032
+                                           ; SOURCE LINE # 971
+                                           ; SOURCE LINE # 972
+001B 900000      R     MOV     DPTR,#buffer
+001E 120000      E     LCALL   ?C?PLDXDATA
+0021 900000      R     MOV     DPTR,#bufIndex
+0024 E0                MOVX    A,@DPTR
+0025 FF                MOV     R7,A
+0026 E9                MOV     A,R1
+0027 2F                ADD     A,R7
+0028 F9                MOV     R1,A
+0029 E4                CLR     A
+002A 3A                ADDC    A,R2
+002B FA                MOV     R2,A
+002C 120000      E     LCALL   ?C?CLDPTR
+002F FF                MOV     R7,A
+0030 120000      R     LCALL   _LIS331HH_SPI_WriteTxData
+                                           ; SOURCE LINE # 973
+0033 900000      R     MOV     DPTR,#bufIndex
+0036 E0                MOVX    A,@DPTR
+0037 04                INC     A
+0038 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 974
+0039 900000      R     MOV     DPTR,#byteCount
+003C E0                MOVX    A,@DPTR
+003D 14                DEC     A
+003E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 975
+003F 80CF              SJMP    ?C0030
+                                           ; SOURCE LINE # 976
+0041         ?C0032:
+0041 22                RET     
+             ; FUNCTION _LIS331HH_SPI_PutArray (END)
+
+             ; FUNCTION LIS331HH_SPI_ClearFIFO (BEGIN)
+                                           ; SOURCE LINE # 996
+                                           ; SOURCE LINE # 997
+0000         ?C0033:
+                                           ; SOURCE LINE # 1001
+0000 906567            MOV     DPTR,#06567H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 30E507            JNB     ACC.5,?C0034
+                                           ; SOURCE LINE # 1002
+                                           ; SOURCE LINE # 1003
+0009 906456            MOV     DPTR,#06456H
+000C E0                MOVX    A,@DPTR
+000D FF                MOV     R7,A
+                                           ; SOURCE LINE # 1004
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 28  
+
+000E 80F0              SJMP    ?C0033
+0010         ?C0034:
+                                           ; SOURCE LINE # 1006
+0010 120000      E     LCALL   CyEnterCriticalSection
+0013 900000      R     MOV     DPTR,#enableInterrupts
+0016 EF                MOV     A,R7
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1008
+0018 906496            MOV     DPTR,#06496H
+001B E0                MOVX    A,@DPTR
+001C FF                MOV     R7,A
+001D EF                MOV     A,R7
+001E 4401              ORL     A,#01H
+0020 FF                MOV     R7,A
+0021 EF                MOV     A,R7
+0022 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1009
+0023 906496            MOV     DPTR,#06496H
+0026 E0                MOVX    A,@DPTR
+0027 FF                MOV     R7,A
+0028 EF                MOV     A,R7
+0029 54FE              ANL     A,#0FEH
+002B FF                MOV     R7,A
+002C EF                MOV     A,R7
+002D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1016
+002E 900000      R     MOV     DPTR,#enableInterrupts
+0031 E0                MOVX    A,@DPTR
+0032 FF                MOV     R7,A
+0033 120000      E     LCALL   _CyExitCriticalSection
+                                           ; SOURCE LINE # 1017
+0036 22                RET     
+             ; FUNCTION LIS331HH_SPI_ClearFIFO (END)
+
+             ; FUNCTION LIS331HH_SPI_EnableInt (BEGIN)
+                                           ; SOURCE LINE # 1042
+                                           ; SOURCE LINE # 1043
+                                           ; SOURCE LINE # 1044
+0000 120000      R     LCALL   LIS331HH_SPI_EnableRxInt
+                                           ; SOURCE LINE # 1045
+0003 120000      R     LCALL   LIS331HH_SPI_EnableTxInt
+                                           ; SOURCE LINE # 1046
+0006 22                RET     
+             ; FUNCTION LIS331HH_SPI_EnableInt (END)
+
+             ; FUNCTION LIS331HH_SPI_DisableInt (BEGIN)
+                                           ; SOURCE LINE # 1066
+                                           ; SOURCE LINE # 1067
+                                           ; SOURCE LINE # 1068
+0000 120000      R     LCALL   LIS331HH_SPI_DisableTxInt
+                                           ; SOURCE LINE # 1069
+0003 120000      R     LCALL   LIS331HH_SPI_DisableRxInt
+                                           ; SOURCE LINE # 1070
+0006 22                RET     
+             ; FUNCTION LIS331HH_SPI_DisableInt (END)
+
+             ; FUNCTION _LIS331HH_SPI_SetInterruptMode (BEGIN)
+                                           ; SOURCE LINE # 1091
+0000 900000      R     MOV     DPTR,#intSrc
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1092
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 29  
+
+                                           ; SOURCE LINE # 1093
+0005 900000      R     MOV     DPTR,#intSrc
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 54EF              ANL     A,#0EFH
+000D FF                MOV     R7,A
+000E 906486            MOV     DPTR,#06486H
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1094
+0013 900000      R     MOV     DPTR,#intSrc
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 906587            MOV     DPTR,#06587H
+001B EF                MOV     A,R7
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1095
+001D 22                RET     
+             ; FUNCTION _LIS331HH_SPI_SetInterruptMode (END)
+
+             ; FUNCTION LIS331HH_SPI_ReadStatus (BEGIN)
+                                           ; SOURCE LINE # 1126
+                                           ; SOURCE LINE # 1127
+                                           ; SOURCE LINE # 1145
+0000 906567            MOV     DPTR,#06567H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900000      R     MOV     DPTR,#tmpStatus
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1146
+000A 900000      R     MOV     DPTR,#tmpStatus
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F 906466            MOV     DPTR,#06466H
+0012 E0                MOVX    A,@DPTR
+0013 FE                MOV     R6,A
+0014 EF                MOV     A,R7
+0015 4E                ORL     A,R6
+0016 FF                MOV     R7,A
+0017 900000      R     MOV     DPTR,#tmpStatus
+001A EF                MOV     A,R7
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1147
+001C 900000      R     MOV     DPTR,#tmpStatus
+001F E0                MOVX    A,@DPTR
+0020 FF                MOV     R7,A
+0021 EF                MOV     A,R7
+0022 54EF              ANL     A,#0EFH
+0024 FF                MOV     R7,A
+0025 900000      R     MOV     DPTR,#tmpStatus
+0028 EF                MOV     A,R7
+0029 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1151
+002A 900000      R     MOV     DPTR,#tmpStatus
+002D E0                MOVX    A,@DPTR
+002E FF                MOV     R7,A
+                                           ; SOURCE LINE # 1152
+002F         ?C0039:
+002F 22                RET     
+             ; FUNCTION LIS331HH_SPI_ReadStatus (END)
+C51 COMPILER V9.51   LIS331HH_SPI                                                          07/17/2014 14:37:07 PAGE 30  
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    613    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      3      19
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

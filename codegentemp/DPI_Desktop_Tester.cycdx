@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<blockRegMap version="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://cypress.com/xsd/cyblockregmap cyblockregmap.xsd" xmlns="http://cypress.com/xsd/cyblockregmap">
+  <block name="Rx" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="CONFIG_COM" BASE="0x0" SIZE="0x0" desc="UART" visible="true">
+    <block name="IntClock" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="VirtualMux_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="BUART" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <register name="RX_CONFIG_COM_RX_ADDRESS1" address="0x6429" bitWidth="8" desc="RX Address1 Register" />
+    <register name="RX_CONFIG_COM_RX_ADDRESS2" address="0x6439" bitWidth="8" desc="RX Address2 Register" />
+    <register name="RX_CONFIG_COM_RX_DATA" address="0x6449" bitWidth="8" desc="RX Data Register" />
+    <register name="RX_CONFIG_COM_RX_STATUS" address="0x646C" bitWidth="8" desc="RX status register">
+      <field name="CONFIG_COM_RX_STS_MRKSPC" from="0" to="0" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_RX_STS_BREAK" from="1" to="1" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_RX_STS_PAR_ERROR" from="2" to="2" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_RX_STS_STOP_ERROR" from="3" to="3" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_RX_STS_OVERRUN" from="4" to="4" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_RX_STS_FIFO_NOTEMPTY" from="5" to="5" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_RX_STS_ADDR_MATCH" from="6" to="6" access="R" resetVal="" desc="" />
+    </register>
+    <register name="TX_CONFIG_COM_TX_DATA" address="0x6548" bitWidth="8" desc="TX Data Register" />
+    <register name="TX_CONFIG_COM_TX_STATUS" address="0x6568" bitWidth="8" desc="TX status register">
+      <field name="CONFIG_COM_TX_STS_COMPLETE" from="0" to="0" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_TX_STS_FIFO_EMPTY" from="1" to="1" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_TX_STS_FIFO_FULL" from="2" to="2" access="R" resetVal="" desc="" />
+      <field name="CONFIG_COM_TX_STS_FIFO_NOT_FULL" from="3" to="3" access="R" resetVal="" desc="" />
+    </register>
+  </block>
+  <block name="CS" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="Tx" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="Tx_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="Rx_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="DATA_COM" BASE="0x0" SIZE="0x0" desc="UART" visible="true">
+    <block name="IntClock" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="VirtualMux_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="BUART" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <register name="RX_DATA_COM_RX_STATUS" address="0x6468" bitWidth="8" desc="RX status register">
+      <field name="DATA_COM_RX_STS_MRKSPC" from="0" to="0" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_RX_STS_BREAK" from="1" to="1" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_RX_STS_PAR_ERROR" from="2" to="2" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_RX_STS_STOP_ERROR" from="3" to="3" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_RX_STS_OVERRUN" from="4" to="4" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_RX_STS_FIFO_NOTEMPTY" from="5" to="5" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_RX_STS_ADDR_MATCH" from="6" to="6" access="R" resetVal="" desc="" />
+    </register>
+    <register name="RX_DATA_COM_RX_ADDRESS1" address="0x6529" bitWidth="8" desc="RX Address1 Register" />
+    <register name="RX_DATA_COM_RX_ADDRESS2" address="0x6539" bitWidth="8" desc="RX Address2 Register" />
+    <register name="TX_DATA_COM_TX_DATA" address="0x6546" bitWidth="8" desc="TX Data Register" />
+    <register name="RX_DATA_COM_RX_DATA" address="0x6549" bitWidth="8" desc="RX Data Register" />
+    <register name="TX_DATA_COM_TX_STATUS" address="0x6566" bitWidth="8" desc="TX status register">
+      <field name="DATA_COM_TX_STS_COMPLETE" from="0" to="0" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_TX_STS_FIFO_EMPTY" from="1" to="1" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_TX_STS_FIFO_FULL" from="2" to="2" access="R" resetVal="" desc="" />
+      <field name="DATA_COM_TX_STS_FIFO_NOT_FULL" from="3" to="3" access="R" resetVal="" desc="" />
+    </register>
+  </block>
+  <block name="LIS331HH_SPI" BASE="0x0" SIZE="0x0" desc="" visible="true">
+    <block name="VirtualMux_2" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="VirtualMux_3" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="ZeroTerminal_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="VirtualMux_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="IntClock" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="BSPIM" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  </block>
+  <block name="RST_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="SCL" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="SDA" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="HMC5883L_I2C" BASE="0x0" SIZE="0x0" desc="" visible="true">
+    <block name="or_ff" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="ZeroTerminal_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Vmux_clock" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="bI2C_UDB" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="IntClock" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="or_udb" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Vmux_timeout_clock" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="or_udb_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Vmux_sda_in" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="ZeroTerminal_2" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Vmux_scl_in" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="ZeroTerminal_3" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Bufoe_scl" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="I2C_IRQ" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Vmux_scl_out" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Bufoe_sda" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Vmux_interrupt" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="Vmux_sda_out" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="OneTerminal_2" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <block name="OneTerminal_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+    <register name="HMC5883L_I2C_UDB_MSTR_DATA" address="0x6400" bitWidth="8" desc="Data">
+      <field name="data" from="7" to="0" access="RW" resetVal="" desc="This register provides read/write access to the Shift register." />
+    </register>
+    <register name="HMC5883L_I2C_UDB_MSTR_CSR" address="0x6464" bitWidth="8" desc="Status Register">
+      <field name="interrupt" from="7" to="7" access="R" resetVal="" desc="Interrupt bit" />
+      <field name="lost_arb" from="6" to="6" access="R" resetVal="" desc="" />
+      <field name="stop_status" from="5" to="5" access="RW" resetVal="" desc="" />
+      <field name="bus_busy" from="4" to="4" access="R" resetVal="" desc="" />
+      <field name="address" from="3" to="3" access="R" resetVal="" desc="" />
+      <field name="master_mode" from="2" to="2" access="R" resetVal="" desc="" />
+      <field name="lrb" from="1" to="1" access="R" resetVal="" desc="" />
+      <field name="byte_complete" from="0" to="0" access="R" resetVal="" desc="" />
+    </register>
+    <register name="HMC5883L_I2C_UDB_MSTR_CFG" address="0x647B" bitWidth="8" desc="Configuration Register">
+      <field name="start_gen" from="7" to="7" access="RW" resetVal="" desc="" />
+      <field name="stop_gen" from="6" to="6" access="RW" resetVal="" desc="" />
+      <field name="restart_gen" from="5" to="5" access="RW" resetVal="" desc="" />
+      <field name="ack" from="4" to="4" access="RW" resetVal="" desc="" />
+      <field name="hw_addr_en" from="3" to="3" access="RW" resetVal="" desc="" />
+      <field name="transmit" from="2" to="2" access="RW" resetVal="" desc="" />
+      <field name="master_en" from="1" to="1" access="RW" resetVal="" desc="" />
+    </register>
+    <register name="HMC5883L_I2C_UDB_MSTR_INT_MASK" address="0x6484" bitWidth="8" desc="Interrupt Mask" />
+  </block>
+  <block name="SCLK" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="MOSI" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="MISO" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+</blockRegMap>

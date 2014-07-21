@@ -1,0 +1,168 @@
+#***************************************************************************
+
+#sjplacer
+
+#Version:            1.1
+
+#Build Date:         Mar 26 2013 14:54:34
+
+#File Generated:     Jul 17 2014 14:36:53
+
+#Purpose:            
+
+#Copyright (C) 2010-2011 by Softjin Technologies Pvt Ltd. All rights reserved.
+
+#***************************************************************************
+
+Executing : C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\bin/sjplacer.exe --proj-name DPI_Desktop_Tester --netlist-vh2 DPI_Desktop_Tester_p.vh2 --arch-file C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\dev/psoc3/placer.ark --rrg-file C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\dev/psoc3/route_arch-rrg.cydata --irq-file C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\dev/psoc3/irqconn.cydata --drq-file C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\dev/psoc3/dmaconn.cydata --dsi-conn-file C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\dev/psoc3/dsiconn.cydata --pins-file pins_100-TQFP.xml --lib-file DPI_Desktop_Tester_p.lib --sdc-file DPI_Desktop_Tester.sdc --io-pcf DPI_Desktop_Tester.pci --outdir .
+
+		Softjin Techologies Placer, Version 1.1
+
+Build Date : Jul 22 2013	11:20:09
+
+D2004: Option and Settings Summary
+=============================================================
+Netlist vh2 file          - DPI_Desktop_Tester_p.vh2
+Architecture file         - C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\dev/psoc3/placer.ark
+Package                   - 
+Defparam file             - 
+SDC file                  - DPI_Desktop_Tester.sdc
+Output directory          - .
+Timing library            - DPI_Desktop_Tester_p.lib
+IO Placement file         - DPI_Desktop_Tester.pci
+
+D2050: Starting reading inputs for placer
+=============================================================
+D2065: Reading netlist file : "DPI_Desktop_Tester_p.vh2"
+D2065: Reading arch file : "C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\dev/psoc3/placer.ark"
+D2051: Reading of inputs for placer completed successfully
+
+D2053: Starting placement of the design
+=============================================================
+
+Phase 2
+Phase 3
+
+Design Statistics after Packing
+    Number of Combinational MCs 	:	32
+    Number of Sequential MCs    	:	64
+    Number of DPs               	:	9
+    Number of Controls          	:	4
+    Number of Status            	:	7
+    Number of SyncCells         	:	0
+    Number of count7cells       	:	3
+
+Device Utilization Summary after Packing
+    Macrocells                  :	96/192
+    UDBS                        :	17/24
+    IOs                         :	11/72
+
+
+D2088: Phase 3, elapsed time : 0.0 (sec)
+
+Phase 4
+D2088: Phase 4, elapsed time : 0.0 (sec)
+
+Phase 5
+D2088: Phase 5, elapsed time : 0.0 (sec)
+
+Phase 6
+
+######################################################################
+Placement Timing Summary
+
+The timing summary is based on estimated routing delays after
+placement. For final timing report, please carry out the timing
+analysis after routing.
+======================================================================
+
+######################################################################
+                     Clock Summary 
+======================================================================
+Number of clocks: 9
+Clock: CONFIG_COM_IntClock  | Frequency:  42.7 MHz | Target:   0.5 MHz
+Clock: CyBUS_CLK            | Frequency:  46.1 MHz | Target:  24.0 MHz
+Clock: CyILO                | Frequency: N/A       | Target:   0.0 MHz
+Clock: CyIMO                | Frequency: N/A       | Target:   3.0 MHz
+Clock: CyMASTER_CLK         | Frequency: N/A       | Target:  24.0 MHz
+Clock: CyPLL_OUT            | Frequency: N/A       | Target:  24.0 MHz
+Clock: DATA_COM_IntClock    | Frequency:  42.7 MHz | Target:   0.5 MHz
+Clock: HMC5883L_I2C_IntClock | Frequency:  34.3 MHz | Target:   6.0 MHz
+Clock: LIS331HH_SPI_IntClock | Frequency:  54.4 MHz | Target:   0.5 MHz
+
+======================================================================
+                     End of Clock Summary
+######################################################################
+
+D2088: Phase 6, elapsed time : 0.1 (sec)
+
+Phase 7
+######################################################################
+                     Clock Summary 
+======================================================================
+Number of clocks: 9
+Clock: CONFIG_COM_IntClock  | Frequency:   2.2 MHz | Target:   0.5 MHz
+Clock: CyBUS_CLK            | Frequency:   2.2 MHz | Target:  24.0 MHz
+Clock: CyILO                | Frequency: N/A       | Target:   0.0 MHz
+Clock: CyIMO                | Frequency: N/A       | Target:   3.0 MHz
+Clock: CyMASTER_CLK         | Frequency: N/A       | Target:  24.0 MHz
+Clock: CyPLL_OUT            | Frequency: N/A       | Target:  24.0 MHz
+Clock: DATA_COM_IntClock    | Frequency:   2.4 MHz | Target:   0.5 MHz
+Clock: HMC5883L_I2C_IntClock | Frequency:  30.2 MHz | Target:   6.0 MHz
+Clock: LIS331HH_SPI_IntClock | Frequency:  55.3 MHz | Target:   0.5 MHz
+
+======================================================================
+                     End of Clock Summary
+######################################################################
+D2088: Phase 7, elapsed time : 2.1 (sec)
+
+Final Design Statistics
+    Number of Combinational MCs 	:	32
+    Number of Sequential MCs    	:	64
+    Number of DPs               	:	9
+    Number of Controls          	:	4
+    Number of Status            	:	7
+    Number of SyncCells         	:	0
+    Number of count7cells       	:	3
+    Number of IOs       	:	11
+
+Device Utilization Summary
+    Macrocells                  :	96/192
+    IOs                         :	11/72
+
+
+
+######################################################################
+Placement Timing Summary
+
+The timing summary is based on estimated routing delays after
+placement. For final timing report, please carry out the timing
+analysis after routing.
+======================================================================
+
+
+######################################################################
+                     Clock Summary 
+======================================================================
+Number of clocks: 9
+Clock: CONFIG_COM_IntClock  | Frequency:   2.5 MHz | Target:   0.5 MHz
+Clock: CyBUS_CLK            | Frequency:   2.5 MHz | Target:  24.0 MHz
+Clock: CyILO                | Frequency: N/A       | Target:   0.0 MHz
+Clock: CyIMO                | Frequency: N/A       | Target:   3.0 MHz
+Clock: CyMASTER_CLK         | Frequency: N/A       | Target:  24.0 MHz
+Clock: CyPLL_OUT            | Frequency: N/A       | Target:  24.0 MHz
+Clock: DATA_COM_IntClock    | Frequency:   2.5 MHz | Target:   0.5 MHz
+Clock: HMC5883L_I2C_IntClock | Frequency:  34.2 MHz | Target:   6.0 MHz
+Clock: LIS331HH_SPI_IntClock | Frequency:  61.0 MHz | Target:   0.5 MHz
+
+======================================================================
+                     End of Clock Summary
+######################################################################
+
+Phase 8
+D2088: Phase 8, elapsed time : 0.0 (sec)
+
+D2054: Placement of the design completed successfully
+
+I2076: Total run-time: 3.1 sec.
+

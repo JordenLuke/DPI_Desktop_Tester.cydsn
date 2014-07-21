@@ -1,0 +1,499 @@
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE MAG_I2C_PM
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\MAG_I2C_PM.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\MAG_I2C_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\MAG_I2C_PM.lst) CD 
+                    -DB NOIP OT(2,SIZE) DF(DEBUG) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\MAG_I2C_PM.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: MAG_I2C_PM.c
+   3          * Version 3.30
+   4          *
+   5          * Description:
+   6          *  This file provides Low power mode APIs for I2C component.
+   7          *
+   8          * Note:
+   9          *  None
+  10          *
+  11          ********************************************************************************
+  12          * Copyright 2008-2012, Cypress Semiconductor Corporation.  All rights reserved.
+  13          * You may use this file only in accordance with the license, terms, conditions,
+  14          * disclaimers, and limitations in the end user license agreement accompanying
+  15          * the software package with which this file was provided.
+  16          *******************************************************************************/
+  17          
+  18          #include "MAG_I2C_PVT.h"
+  19          
+  20          MAG_I2C_BACKUP_STRUCT MAG_I2C_backup =
+  21          {
+  22              MAG_I2C_DISABLE, /* enableState */
+  23          
+  24              #if(MAG_I2C_FF_IMPLEMENTED)
+                      MAG_I2C_DEFAULT_XCFG,  /* xcfg */
+                      MAG_I2C_DEFAULT_CFG,   /* cfg  */
+              
+                      #if(MAG_I2C_MODE_SLAVE_ENABLED)
+                          MAG_I2C_DEFAULT_ADDR, /* addr */
+                      #endif /* (MAG_I2C_MODE_SLAVE_ENABLED) */
+              
+                      #if(CY_PSOC5A)
+                          LO8(MAG_I2C_DEFAULT_DIVIDE_FACTOR),  /* div */
+                      #else
+                          LO8(MAG_I2C_DEFAULT_DIVIDE_FACTOR), /* div1 */
+                          HI8(MAG_I2C_DEFAULT_DIVIDE_FACTOR), /* div2 */
+                      #endif /* (CY_PSOC5A) */
+              
+                  #else  /* (MAG_I2C_UDB_IMPLEMENTED) */
+  40                  MAG_I2C_DEFAULT_CFG,    /* control */
+  41          
+  42                  #if(CY_UDB_V0)
+                          MAG_I2C_INT_ENABLE_MASK, /* aux_ctl */
+              
+                          #if(MAG_I2C_MODE_SLAVE_ENABLED)
+                              MAG_I2C_DEFAULT_ADDR, /* addr_d0 */
+                          #endif /* (MAG_I2C_MODE_SLAVE_ENABLED) */
+                      #endif /* (CY_UDB_V0) */
+  49              #endif /* (MAG_I2C_FF_IMPLEMENTED) */
+  50          
+  51              #if(MAG_I2C_TIMEOUT_ENABLED)
+                      MAG_I2C_DEFAULT_TMOUT_PERIOD,
+                      MAG_I2C_DEFAULT_TMOUT_INTR_MASK,
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 2   
+
+              
+                      #if(MAG_I2C_TIMEOUT_PRESCALER_ENABLED && CY_UDB_V0)
+                          MAG_I2C_DEFAULT_TMOUT_PRESCALER_PRD,
+                      #endif /* (MAG_I2C_TIMEOUT_PRESCALER_ENABLED) */
+              
+                  #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+  60          };
+  61          
+  62          #if((MAG_I2C_FF_IMPLEMENTED) && (MAG_I2C_WAKEUP_ENABLED))
+                  volatile uint8 MAG_I2C_wakeupSource;
+              #endif /* ((MAG_I2C_FF_IMPLEMENTED) && (MAG_I2C_WAKEUP_ENABLED)) */
+  65          
+  66          
+  67          /*******************************************************************************
+  68          * Function Name: MAG_I2C_SaveConfig
+  69          ********************************************************************************
+  70          *
+  71          * Summary:
+  72          *  Wakeup on address match enabled: disables I2C Master(if was enabled before go
+  73          *  to sleep), enables I2C backup regulator. Waits while on-going transaction be
+  74          *  will completed and I2C will be ready go to sleep. All incoming transaction
+  75          *  will be NACKed till power down will be asserted. The address match event
+  76          *  wakes up the chip.
+  77          *  Wakeup on address match disabled: saves I2C configuration and non-retention
+  78          *  register values.
+  79          *
+  80          * Parameters:
+  81          *  None
+  82          *
+  83          * Return:
+  84          *  None
+  85          *
+  86          * Global Variables:
+  87          *  MAG_I2C_backup - used to save component configuration and
+  88          *       none-retention registers before enter sleep mode.
+  89          *
+  90          * Reentrant:
+  91          *  No
+  92          *
+  93          *******************************************************************************/
+  94          void MAG_I2C_SaveConfig(void) 
+  95          {
+  96   1          #if(MAG_I2C_FF_IMPLEMENTED)
+                      #if(MAG_I2C_WAKEUP_ENABLED)
+                          uint8 enableInterrupts;
+                      #endif /* (MAG_I2C_WAKEUP_ENABLED) */
+              
+                      /* Store regiters in either Sleep mode */
+                      MAG_I2C_backup.cfg  = MAG_I2C_CFG_REG;
+                      MAG_I2C_backup.xcfg = MAG_I2C_XCFG_REG;
+              
+                      #if(MAG_I2C_MODE_SLAVE_ENABLED)
+                          MAG_I2C_backup.addr = MAG_I2C_ADDR_REG;
+                      #endif /* (MAG_I2C_MODE_SLAVE_ENABLED) */
+              
+                      #if(CY_PSOC5A)
+                          MAG_I2C_backup.clkDiv   = MAG_I2C_CLKDIV_REG;
+                      #else
+                          MAG_I2C_backup.clkDiv1  = MAG_I2C_CLKDIV1_REG;
+                          MAG_I2C_backup.clkDiv2  = MAG_I2C_CLKDIV2_REG;
+                      #endif /* (CY_PSOC5A) */
+              
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 3   
+
+                      #if(MAG_I2C_WAKEUP_ENABLED)
+                          /* Need to disable Master */
+                          MAG_I2C_CFG_REG &= ((uint8) ~MAG_I2C_ENABLE_MASTER);
+              
+                          /* Enable the I2C regulator backup */
+                          enableInterrupts = CyEnterCriticalSection();
+                          MAG_I2C_PWRSYS_CR1_REG |= MAG_I2C_PWRSYS_CR1_I2C_REG_BACKUP;
+                          CyExitCriticalSection(enableInterrupts);
+              
+                          /* 1) Set force NACK to ignore I2C transactions
+                             2) Wait while I2C will be ready go to Sleep
+                             3) These bits are cleared on wake up */
+                          MAG_I2C_XCFG_REG |= MAG_I2C_XCFG_FORCE_NACK;
+                          while(0u == (MAG_I2C_XCFG_REG & MAG_I2C_XCFG_RDY_TO_SLEEP))
+                          {
+                              ; /* Wait when block is ready to Sleep */
+                          }
+              
+                          /* Setup wakeup interrupt */
+                          MAG_I2C_DisableInt();
+                          (void) CyIntSetVector(MAG_I2C_ISR_NUMBER, &MAG_I2C_WAKEUP_ISR);
+                          MAG_I2C_wakeupSource = 0u;
+                          MAG_I2C_EnableInt();
+              
+                      #endif /* (MAG_I2C_WAKEUP_ENABLED) */
+              
+                  #else
+ 143   1              /* Store only address match bit */
+ 144   1              MAG_I2C_backup.control = (MAG_I2C_CFG_REG & MAG_I2C_CTRL_ANY_ADDRESS_MASK);
+ 145   1      
+ 146   1              #if(CY_UDB_V0)
+                          /* Store interrupt mask bits */
+                          MAG_I2C_backup.intMask = MAG_I2C_INT_MASK_REG;
+              
+                          #if(MAG_I2C_MODE & MAG_I2C_MODE_SLAVE)
+                              MAG_I2C_backup.addr = MAG_I2C_ADDR_REG;
+                          #endif /* (MAG_I2C_MODE & MAG_I2C_MODE_SLAVE) */
+              
+                      #endif /* (CY_UDB_V0) */
+ 155   1      
+ 156   1          #endif /* (MAG_I2C_FF_IMPLEMENTED) */
+ 157   1      
+ 158   1          #if(MAG_I2C_TIMEOUT_ENABLED)
+                      MAG_I2C_TimeoutSaveConfig();   /* Save Timeout config */
+                  #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+ 161   1      }
+ 162          
+ 163          
+ 164          /*******************************************************************************
+ 165          * Function Name: MAG_I2C_Sleep
+ 166          ********************************************************************************
+ 167          *
+ 168          * Summary:
+ 169          *  Wakeup on address match enabled: All incoming transaction will be NACKed till
+ 170          *  power down will be asserted. The address match event wakes up the chip.
+ 171          *  Wakeup on address match disabled: Disables active mode power template bits or
+ 172          *  clock gating as appropriate. Saves I2C configuration and non-retention
+ 173          *  register values.
+ 174          *  Disables I2C interrupt.
+ 175          *
+ 176          * Parameters:
+ 177          *  None
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 4   
+
+ 178          *
+ 179          * Return:
+ 180          *  None
+ 181          *
+ 182          * Reentrant:
+ 183          *  No
+ 184          *
+ 185          *******************************************************************************/
+ 186          void MAG_I2C_Sleep(void) 
+ 187          {
+ 188   1          #if(MAG_I2C_WAKEUP_ENABLED)
+                      /* The I2C block should be always enabled if used as wakeup source */
+                      MAG_I2C_backup.enableState = MAG_I2C_DISABLE;
+              
+                      #if(MAG_I2C_TIMEOUT_ENABLED)
+                          MAG_I2C_TimeoutStop();
+                      #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+              
+                  #else
+ 197   1      
+ 198   1              MAG_I2C_backup.enableState = ((uint8) MAG_I2C_IS_ENABLED);
+ 199   1      
+ 200   1              if(MAG_I2C_IS_ENABLED)
+ 201   1              {
+ 202   2                  MAG_I2C_Stop();
+ 203   2              }
+ 204   1          #endif /* (MAG_I2C_WAKEUP_ENABLED) */
+ 205   1      
+ 206   1          MAG_I2C_SaveConfig();
+ 207   1      }
+ 208          
+ 209          
+ 210          /*******************************************************************************
+ 211          * Function Name: MAG_I2C_RestoreConfig
+ 212          ********************************************************************************
+ 213          *
+ 214          * Summary:
+ 215          *  Wakeup on address match enabled: enables I2C Master (if was enabled before go
+ 216          *  to sleep), disables I2C backup regulator.
+ 217          *  Wakeup on address match disabled: Restores I2C configuration and
+ 218          *  non-retention register values.
+ 219          *
+ 220          * Parameters:
+ 221          *  None
+ 222          *
+ 223          * Return:
+ 224          *  None
+ 225          *
+ 226          * Global Variables:
+ 227          *  MAG_I2C_backup - used to save component configuration and
+ 228          *  none-retention registers before exit sleep mode.
+ 229          *
+ 230          *******************************************************************************/
+ 231          void MAG_I2C_RestoreConfig(void) 
+ 232          {
+ 233   1          #if(MAG_I2C_FF_IMPLEMENTED)
+                      uint8 enableInterrupts;
+              
+                      if(MAG_I2C_CHECK_PWRSYS_I2C_BACKUP)    /* Enabled if was in Sleep */
+                      {
+                          /* Disable back-up regulator */
+                          enableInterrupts = CyEnterCriticalSection();
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 5   
+
+                          MAG_I2C_PWRSYS_CR1_REG &= ((uint8) ~MAG_I2C_PWRSYS_CR1_I2C_REG_BACKUP);
+                          CyExitCriticalSection(enableInterrupts);
+              
+                          /* Re-enable Master */
+                          MAG_I2C_CFG_REG = MAG_I2C_backup.cfg;
+                      }
+                      else /* The I2C_REG_BACKUP was cleaned by PM API: it means Hibernate or wake-up not set */
+                      {
+                          #if(MAG_I2C_WAKEUP_ENABLED)
+                              /* Disable power to I2C block before register restore */
+                              enableInterrupts = CyEnterCriticalSection();
+                              MAG_I2C_ACT_PWRMGR_REG  &= ((uint8) ~MAG_I2C_ACT_PWR_EN);
+                              MAG_I2C_STBY_PWRMGR_REG &= ((uint8) ~MAG_I2C_STBY_PWR_EN);
+                              CyExitCriticalSection(enableInterrupts);
+              
+                              /* Enable component after restore complete */
+                              MAG_I2C_backup.enableState = MAG_I2C_ENABLE;
+                          #endif /* (MAG_I2C_WAKEUP_ENABLED) */
+              
+                          /* Restore component registers: Hibernate disable power */
+                          MAG_I2C_XCFG_REG = MAG_I2C_backup.xcfg;
+                          MAG_I2C_CFG_REG  = MAG_I2C_backup.cfg;
+              
+                          #if(MAG_I2C_MODE_SLAVE_ENABLED)
+                              MAG_I2C_ADDR_REG = MAG_I2C_backup.addr;
+                          #endif /* (MAG_I2C_MODE_SLAVE_ENABLED) */
+              
+                          #if(CY_PSOC5A)
+                              MAG_I2C_CLKDIV_REG  = MAG_I2C_backup.clkDiv;
+                          #else
+                              MAG_I2C_CLKDIV1_REG = MAG_I2C_backup.clkDiv1;
+                              MAG_I2C_CLKDIV2_REG = MAG_I2C_backup.clkDiv2;
+                          #endif /* (CY_PSOC5A) */
+                      }
+              
+                      #if(MAG_I2C_WAKEUP_ENABLED)
+                          MAG_I2C_DisableInt();
+                          (void) CyIntSetVector(MAG_I2C_ISR_NUMBER, &MAG_I2C_ISR);
+                          if(0u != MAG_I2C_wakeupSource)
+                          {
+                              MAG_I2C_SetPendingInt();   /* Generate interrupt to process incomming transcation */
+                          }
+                          MAG_I2C_EnableInt();
+                      #endif /* (MAG_I2C_WAKEUP_ENABLED) */
+              
+                  #else
+ 286   1      
+ 287   1              #if(CY_UDB_V0)
+                          uint8 enableInterrupts;
+              
+                          MAG_I2C_INT_MASK_REG |= MAG_I2C_backup.intMask;
+              
+                          enableInterrupts = CyEnterCriticalSection();
+                          MAG_I2C_INT_ENABLE_REG |= MAG_I2C_INT_ENABLE_MASK;
+                          CyExitCriticalSection(enableInterrupts);
+              
+                          #if(MAG_I2C_MODE_MASTER_ENABLED)
+                              /* Restore Master Clock generator */
+                              MAG_I2C_MCLK_PRD_REG = MAG_I2C_DEFAULT_MCLK_PRD;
+                              MAG_I2C_MCLK_CMP_REG = MAG_I2C_DEFAULT_MCLK_CMP;
+                          #endif /* (MAG_I2C_MODE_MASTER_ENABLED) */
+              
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 6   
+
+                          #if(MAG_I2C_MODE_SLAVE_ENABLED)
+                              MAG_I2C_ADDR_REG = MAG_I2C_backup.addr;
+              
+                              /* Restore slave bit counter period */
+                              MAG_I2C_PERIOD_REG = MAG_I2C_DEFAULT_PERIOD;
+                          #endif /* (MAG_I2C_MODE_SLAVE_ENABLED) */
+              
+                      #endif /* (CY_UDB_V0) */
+ 310   1      
+ 311   1              MAG_I2C_CFG_REG = MAG_I2C_backup.control;
+ 312   1      
+ 313   1          #endif /* (MAG_I2C_FF_IMPLEMENTED) */
+ 314   1      
+ 315   1          #if(MAG_I2C_TIMEOUT_ENABLED)
+                      MAG_I2C_TimeoutRestoreConfig();
+                  #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+ 318   1      }
+ 319          
+ 320          
+ 321          /*******************************************************************************
+ 322          * Function Name: MAG_I2C_Wakeup
+ 323          ********************************************************************************
+ 324          *
+ 325          * Summary:
+ 326          *  Wakeup on address match enabled: enables I2C Master (if was enabled before go
+ 327          *  to sleep) and disables I2C backup regulator.
+ 328          *  Wakeup on address match disabled: Restores I2C configuration and
+ 329          *  non-retention register values. Restores Active mode power template bits or
+ 330          *  clock gating as appropriate.
+ 331          *  The I2C interrupt remains disabled after function call.
+ 332          *
+ 333          * Parameters:
+ 334          *  None
+ 335          *
+ 336          * Return:
+ 337          *  None
+ 338          *
+ 339          * Reentrant:
+ 340          *  No
+ 341          *
+ 342          *******************************************************************************/
+ 343          void MAG_I2C_Wakeup(void) 
+ 344          {
+ 345   1          MAG_I2C_RestoreConfig();   /* Restore I2C register settings */
+ 346   1      
+ 347   1          /* Restore component enable state */
+ 348   1          if(0u != MAG_I2C_backup.enableState)
+ 349   1          {
+ 350   2              MAG_I2C_Enable();
+ 351   2              MAG_I2C_EnableInt();
+ 352   2          }
+ 353   1          else
+ 354   1          {
+ 355   2              #if(MAG_I2C_TIMEOUT_ENABLED)
+                          MAG_I2C_TimeoutEnable();
+                      #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+ 358   2          }
+ 359   1      }
+ 360          
+ 361          
+ 362          /* [] END OF FILE */
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 7   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION MAG_I2C_SaveConfig (BEGIN)
+                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 144
+0000 90647B            MOV     DPTR,#0647BH
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 5408              ANL     A,#08H
+0008 FF                MOV     R7,A
+0009 900000      R     MOV     DPTR,#MAG_I2C_backup+01H
+000C EF                MOV     A,R7
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 161
+000E 22                RET     
+             ; FUNCTION MAG_I2C_SaveConfig (END)
+
+             ; FUNCTION MAG_I2C_Sleep (BEGIN)
+                                           ; SOURCE LINE # 186
+                                           ; SOURCE LINE # 187
+                                           ; SOURCE LINE # 198
+0000 90647B            MOV     DPTR,#0647BH
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 30E104            JNB     ACC.1,?C0002
+0009 7F01              MOV     R7,#01H
+000B 8002              SJMP    ?C0003
+000D         ?C0002:
+000D 7F00              MOV     R7,#00H
+000F         ?C0003:
+000F 900000      R     MOV     DPTR,#MAG_I2C_backup
+0012 EF                MOV     A,R7
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 200
+0014 90647B            MOV     DPTR,#0647BH
+0017 E0                MOVX    A,@DPTR
+0018 FF                MOV     R7,A
+0019 EF                MOV     A,R7
+001A 30E103            JNB     ACC.1,?C0004
+                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 202
+001D 120000      E     LCALL   MAG_I2C_Stop
+                                           ; SOURCE LINE # 203
+0020         ?C0004:
+                                           ; SOURCE LINE # 206
+0020 120000      R     LCALL   MAG_I2C_SaveConfig
+                                           ; SOURCE LINE # 207
+0023 22                RET     
+             ; FUNCTION MAG_I2C_Sleep (END)
+
+             ; FUNCTION MAG_I2C_RestoreConfig (BEGIN)
+                                           ; SOURCE LINE # 231
+                                           ; SOURCE LINE # 232
+                                           ; SOURCE LINE # 311
+0000 900000      R     MOV     DPTR,#MAG_I2C_backup+01H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 90647B            MOV     DPTR,#0647BH
+C51 COMPILER V9.51   MAG_I2C_PM                                                            05/28/2014 13:42:15 PAGE 8   
+
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 318
+000A 22                RET     
+             ; FUNCTION MAG_I2C_RestoreConfig (END)
+
+             ; FUNCTION MAG_I2C_Wakeup (BEGIN)
+                                           ; SOURCE LINE # 343
+                                           ; SOURCE LINE # 344
+                                           ; SOURCE LINE # 345
+0000 120000      R     LCALL   MAG_I2C_RestoreConfig
+                                           ; SOURCE LINE # 348
+0003 900000      R     MOV     DPTR,#MAG_I2C_backup
+0006 E0                MOVX    A,@DPTR
+0007 FF                MOV     R7,A
+0008 EF                MOV     A,R7
+0009 6009              JZ      ?C0009
+                                           ; SOURCE LINE # 349
+                                           ; SOURCE LINE # 350
+000B 120000      E     LCALL   MAG_I2C_Enable
+                                           ; SOURCE LINE # 351
+000E 9044C0            MOV     DPTR,#044C0H
+0011 7401              MOV     A,#01H
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 352
+                                           ; SOURCE LINE # 354
+                                           ; SOURCE LINE # 358
+                                           ; SOURCE LINE # 359
+0014         ?C0009:
+0014 22                RET     
+             ; FUNCTION MAG_I2C_Wakeup (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     83    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

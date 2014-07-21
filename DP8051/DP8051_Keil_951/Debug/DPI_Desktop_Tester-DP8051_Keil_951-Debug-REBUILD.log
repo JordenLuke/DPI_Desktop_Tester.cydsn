@@ -1,0 +1,4 @@
+--------------- Rebuild Started: 06/27/2014 11:36:17 Project: main.c, Configuration: DP8051 Keil 9.51 Debug ---------------
+c51.exe .\main.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\main.lst) CD DB NOIP "OT(2, Size)" "DF (DEBUG)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\main.obj)
+WARNING: .\main.c:65: 'array': unreferenced local variable
+--------------- Rebuild Succeeded: 06/27/2014 11:36:17 ---------------

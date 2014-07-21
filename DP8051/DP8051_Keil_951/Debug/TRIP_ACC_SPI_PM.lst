@@ -1,0 +1,289 @@
+C51 COMPILER V9.51   TRIP_ACC_SPI_PM                                                       05/28/2014 13:42:16 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE TRIP_ACC_SPI_PM
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\TRIP_ACC_SPI_PM.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\TRIP_ACC_SPI_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\TRIP_ACC_SPI_P
+                    -M.lst) CD DB NOIP OT(2,SIZE) DF(DEBUG) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\TRIP_ACC_SPI
+                    -_PM.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: TRIP_ACC_SPI_PM.c
+   3          * Version 2.40
+   4          *
+   5          * Description:
+   6          *  This file contains the setup, control and status commands to support
+   7          *  component operations in low power mode.
+   8          *
+   9          * Note:
+  10          *
+  11          ********************************************************************************
+  12          * Copyright 2008-2012, Cypress Semiconductor Corporation.  All rights reserved.
+  13          * You may use this file only in accordance with the license, terms, conditions,
+  14          * disclaimers, and limitations in the end user license agreement accompanying
+  15          * the software package with which this file was provided.
+  16          *******************************************************************************/
+  17          
+  18          #include "TRIP_ACC_SPI_PVT.h"
+  19          
+  20          static TRIP_ACC_SPI_BACKUP_STRUCT TRIP_ACC_SPI_backup =
+  21          {
+  22              TRIP_ACC_SPI_DISABLED,
+  23              TRIP_ACC_SPI_BITCTR_INIT,
+  24              #if(CY_UDB_V0)
+                      TRIP_ACC_SPI_TX_INIT_INTERRUPTS_MASK,
+                      TRIP_ACC_SPI_RX_INIT_INTERRUPTS_MASK
+                  #endif /* CY_UDB_V0 */
+  28          };
+  29          
+  30          
+  31          /*******************************************************************************
+  32          * Function Name: TRIP_ACC_SPI_SaveConfig
+  33          ********************************************************************************
+  34          *
+  35          * Summary:
+  36          *  Saves SPIM configuration.
+  37          *
+  38          * Parameters:
+  39          *  None.
+  40          *
+  41          * Return:
+  42          *  None.
+  43          *
+  44          * Global Variables:
+  45          *  TRIP_ACC_SPI_backup - modified when non-retention registers are saved.
+  46          *
+  47          * Reentrant:
+  48          *  No.
+  49          *
+  50          *******************************************************************************/
+  51          void TRIP_ACC_SPI_SaveConfig(void) 
+  52          {
+C51 COMPILER V9.51   TRIP_ACC_SPI_PM                                                       05/28/2014 13:42:16 PAGE 2   
+
+  53   1          /* Store Status Mask registers */
+  54   1          #if(CY_UDB_V0)
+                     TRIP_ACC_SPI_backup.cntrPeriod      = TRIP_ACC_SPI_COUNTER_PERIOD_REG;
+                     TRIP_ACC_SPI_backup.saveSrTxIntMask = TRIP_ACC_SPI_TX_STATUS_MASK_REG;
+                     TRIP_ACC_SPI_backup.saveSrRxIntMask = TRIP_ACC_SPI_RX_STATUS_MASK_REG;
+                  #endif /* (CY_UDB_V0) */
+  59   1      }
+  60          
+  61          
+  62          /*******************************************************************************
+  63          * Function Name: TRIP_ACC_SPI_RestoreConfig
+  64          ********************************************************************************
+  65          *
+  66          * Summary:
+  67          *  Restores SPIM configuration.
+  68          *
+  69          * Parameters:
+  70          *  None.
+  71          *
+  72          * Return:
+  73          *  None.
+  74          *
+  75          * Global Variables:
+  76          *  TRIP_ACC_SPI_backup - used when non-retention registers are restored.
+  77          *
+  78          * Side Effects:
+  79          *  If this API is called without first calling SaveConfig then in the following
+  80          *  registers will be default values from Customizer:
+  81          *  TRIP_ACC_SPI_STATUS_MASK_REG and TRIP_ACC_SPI_COUNTER_PERIOD_REG.
+  82          *
+  83          *******************************************************************************/
+  84          void TRIP_ACC_SPI_RestoreConfig(void) 
+  85          {
+  86   1          /* Restore the data, saved by SaveConfig() function */
+  87   1          #if(CY_UDB_V0)
+                      TRIP_ACC_SPI_COUNTER_PERIOD_REG = TRIP_ACC_SPI_backup.cntrPeriod;
+                      TRIP_ACC_SPI_TX_STATUS_MASK_REG = ((uint8) TRIP_ACC_SPI_backup.saveSrTxIntMask);
+                      TRIP_ACC_SPI_RX_STATUS_MASK_REG = ((uint8) TRIP_ACC_SPI_backup.saveSrRxIntMask);
+                  #endif /* (CY_UDB_V0) */
+  92   1      }
+  93          
+  94          
+  95          /*******************************************************************************
+  96          * Function Name: TRIP_ACC_SPI_Sleep
+  97          ********************************************************************************
+  98          *
+  99          * Summary:
+ 100          *  Prepare SPIM Component goes to sleep.
+ 101          *
+ 102          * Parameters:
+ 103          *  None.
+ 104          *
+ 105          * Return:
+ 106          *  None.
+ 107          *
+ 108          * Global Variables:
+ 109          *  TRIP_ACC_SPI_backup - modified when non-retention registers are saved.
+ 110          *
+ 111          * Reentrant:
+ 112          *  No.
+ 113          *
+ 114          *******************************************************************************/
+C51 COMPILER V9.51   TRIP_ACC_SPI_PM                                                       05/28/2014 13:42:16 PAGE 3   
+
+ 115          void TRIP_ACC_SPI_Sleep(void) 
+ 116          {
+ 117   1          /* Save components enable state */
+ 118   1          TRIP_ACC_SPI_backup.enableState = ((uint8) TRIP_ACC_SPI_IS_ENABLED);
+ 119   1      
+ 120   1          TRIP_ACC_SPI_Stop();
+ 121   1          TRIP_ACC_SPI_SaveConfig();
+ 122   1      }
+ 123          
+ 124          
+ 125          /*******************************************************************************
+ 126          * Function Name: TRIP_ACC_SPI_Wakeup
+ 127          ********************************************************************************
+ 128          *
+ 129          * Summary:
+ 130          *  Prepare SPIM Component to wake up.
+ 131          *
+ 132          * Parameters:
+ 133          *  None.
+ 134          *
+ 135          * Return:
+ 136          *  None.
+ 137          *
+ 138          * Global Variables:
+ 139          *  TRIP_ACC_SPI_backup - used when non-retention registers are restored.
+ 140          *  TRIP_ACC_SPI_txBufferWrite - modified every function call - resets to
+ 141          *  zero.
+ 142          *  TRIP_ACC_SPI_txBufferRead - modified every function call - resets to
+ 143          *  zero.
+ 144          *  TRIP_ACC_SPI_rxBufferWrite - modified every function call - resets to
+ 145          *  zero.
+ 146          *  TRIP_ACC_SPI_rxBufferRead - modified every function call - resets to
+ 147          *  zero.
+ 148          *
+ 149          * Reentrant:
+ 150          *  No.
+ 151          *
+ 152          *******************************************************************************/
+ 153          void TRIP_ACC_SPI_Wakeup(void) 
+ 154          {
+ 155   1          TRIP_ACC_SPI_RestoreConfig();
+ 156   1      
+ 157   1          #if(TRIP_ACC_SPI_RX_SOFTWARE_BUF_ENABLED)
+                      TRIP_ACC_SPI_rxBufferFull  = 0u;
+                      TRIP_ACC_SPI_rxBufferRead  = 0u;
+                      TRIP_ACC_SPI_rxBufferWrite = 0u;
+                  #endif /* (TRIP_ACC_SPI_RX_SOFTWARE_BUF_ENABLED) */
+ 162   1      
+ 163   1          #if(TRIP_ACC_SPI_TX_SOFTWARE_BUF_ENABLED)
+                      TRIP_ACC_SPI_txBufferFull  = 0u;
+                      TRIP_ACC_SPI_txBufferRead  = 0u;
+                      TRIP_ACC_SPI_txBufferWrite = 0u;
+                  #endif /* (TRIP_ACC_SPI_TX_SOFTWARE_BUF_ENABLED) */
+ 168   1      
+ 169   1          /* Clear any data from the RX and TX FIFO */
+ 170   1          TRIP_ACC_SPI_ClearFIFO();
+ 171   1      
+ 172   1          /* Restore components block enable state */
+ 173   1          if(0u != TRIP_ACC_SPI_backup.enableState)
+ 174   1          {
+ 175   2              TRIP_ACC_SPI_Enable();
+ 176   2          }
+C51 COMPILER V9.51   TRIP_ACC_SPI_PM                                                       05/28/2014 13:42:16 PAGE 4   
+
+ 177   1      }
+ 178          
+ 179          
+ 180          /* [] END OF FILE */
+C51 COMPILER V9.51   TRIP_ACC_SPI_PM                                                       05/28/2014 13:42:16 PAGE 5   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION TRIP_ACC_SPI_SaveConfig (BEGIN)
+                                           ; SOURCE LINE # 51
+                                           ; SOURCE LINE # 52
+                                           ; SOURCE LINE # 59
+0000 22                RET     
+             ; FUNCTION TRIP_ACC_SPI_SaveConfig (END)
+
+             ; FUNCTION TRIP_ACC_SPI_RestoreConfig (BEGIN)
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 92
+0000 22                RET     
+             ; FUNCTION TRIP_ACC_SPI_RestoreConfig (END)
+
+             ; FUNCTION TRIP_ACC_SPI_Sleep (BEGIN)
+                                           ; SOURCE LINE # 115
+                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 118
+0000 90649A            MOV     DPTR,#0649AH
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 5410              ANL     A,#010H
+0008 FF                MOV     R7,A
+0009 7E00              MOV     R6,#00H
+000B EF                MOV     A,R7
+000C 4E                ORL     A,R6
+000D 6004              JZ      ?C0003
+000F 7F01              MOV     R7,#01H
+0011 8002              SJMP    ?C0004
+0013         ?C0003:
+0013 7F00              MOV     R7,#00H
+0015         ?C0004:
+0015 900000      R     MOV     DPTR,#TRIP_ACC_SPI_backup
+0018 EF                MOV     A,R7
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 120
+001A 120000      E     LCALL   TRIP_ACC_SPI_Stop
+                                           ; SOURCE LINE # 121
+001D 120000      R     LCALL   TRIP_ACC_SPI_SaveConfig
+                                           ; SOURCE LINE # 122
+0020 22                RET     
+             ; FUNCTION TRIP_ACC_SPI_Sleep (END)
+
+             ; FUNCTION TRIP_ACC_SPI_Wakeup (BEGIN)
+                                           ; SOURCE LINE # 153
+                                           ; SOURCE LINE # 154
+                                           ; SOURCE LINE # 155
+0000 120000      R     LCALL   TRIP_ACC_SPI_RestoreConfig
+                                           ; SOURCE LINE # 170
+0003 120000      E     LCALL   TRIP_ACC_SPI_ClearFIFO
+                                           ; SOURCE LINE # 173
+0006 900000      R     MOV     DPTR,#TRIP_ACC_SPI_backup
+0009 E0                MOVX    A,@DPTR
+000A FF                MOV     R7,A
+000B EF                MOV     A,R7
+000C 6003              JZ      ?C0007
+                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 175
+C51 COMPILER V9.51   TRIP_ACC_SPI_PM                                                       05/28/2014 13:42:16 PAGE 6   
+
+000E 120000      E     LCALL   TRIP_ACC_SPI_Enable
+                                           ; SOURCE LINE # 176
+                                           ; SOURCE LINE # 177
+0011         ?C0007:
+0011 22                RET     
+             ; FUNCTION TRIP_ACC_SPI_Wakeup (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     53    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,136 @@
+dont_use_io iocell 1 0
+dont_use_io iocell 1 1
+dont_use_io iocell 1 3
+set_location "\CONFIG_COM:BUART:tx_state_1\" macrocell 1 2 0 1
+set_location "\HMC5883L_I2C:bI2C_UDB:m_reset\" macrocell 0 4 0 0
+set_location "\LIS331HH_SPI:BSPIM:tx_status_4\" macrocell 3 2 1 3
+set_location "\HMC5883L_I2C:bI2C_UDB:cs_addr_shifter_1\" macrocell 2 3 1 1
+set_location "\CONFIG_COM:BUART:rx_status_4\" macrocell 0 4 0 3
+set_location "\HMC5883L_I2C:bI2C_UDB:status_4\" macrocell 2 3 1 2
+set_location "\CONFIG_COM:BUART:sTX:TxShifter:u0\" datapathcell 1 1 2 
+set_location "\CONFIG_COM:BUART:tx_state_2\" macrocell 1 1 0 2
+set_location "\CONFIG_COM:BUART:sRX:RxSts\" statusicell 1 4 4 
+set_location "\CONFIG_COM:BUART:rx_counter_load\" macrocell 0 4 1 2
+set_location "\DATA_COM:BUART:rx_address_detected\" macrocell 0 1 0 2
+set_location "\HMC5883L_I2C:bI2C_UDB:clkgen_tc2_reg\" macrocell 1 3 1 1
+set_location "\HMC5883L_I2C:bI2C_UDB:clkgen_tc1_reg\" macrocell 3 5 0 2
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_0\" macrocell 2 4 0 1
+set_location "\CONFIG_COM:BUART:txn\" macrocell 1 2 0 0
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_4_split\" macrocell 1 3 1 0
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_3\" macrocell 2 3 1 0
+set_location "\CONFIG_COM:BUART:tx_state_0\" macrocell 1 1 0 0
+set_location "\DATA_COM:BUART:rx_state_3\" macrocell 0 2 0 2
+set_location "\CONFIG_COM:BUART:rx_state_2\" macrocell 0 3 0 0
+set_location "\LIS331HH_SPI:BSPIM:load_cond\" macrocell 3 3 1 0
+set_location "Net_25" macrocell 1 4 1 2
+set_location "\HMC5883L_I2C:bI2C_UDB:sda_in_last_reg\" macrocell 2 4 1 2
+set_location "\LIS331HH_SPI:BSPIM:ld_ident\" macrocell 2 2 0 2
+set_location "\CONFIG_COM:BUART:sRX:RxShifter:u0\" datapathcell 0 2 2 
+set_location "Net_83" macrocell 3 1 0 2
+set_location "\HMC5883L_I2C:bI2C_UDB:sda_in_reg\" macrocell 2 3 0 0
+set_location "\DATA_COM:BUART:sTX:sCLOCK:TxBitClkGen\" datapathcell 3 3 2 
+set_location "\DATA_COM:BUART:rx_bitclk_enable\" macrocell 0 1 1 3
+set_location "\LIS331HH_SPI:BSPIM:tx_status_0\" macrocell 3 2 1 2
+set_location "\CONFIG_COM:BUART:tx_status_2\" macrocell 1 1 1 3
+set_location "\HMC5883L_I2C:bI2C_UDB:Master:ClkGen:u0\" datapathcell 3 5 2 
+set_location "\DATA_COM:BUART:pollcount_1\" macrocell 0 1 1 0
+set_location "\LIS331HH_SPI:BSPIM:TxStsReg\" statusicell 3 2 4 
+set_location "\CONFIG_COM:BUART:rx_address_detected\" macrocell 0 3 1 3
+set_location "\DATA_COM:BUART:sTX:TxSts\" statusicell 3 1 4 
+set_location "\DATA_COM:BUART:rx_last\" macrocell 2 1 0 3
+set_location "\DATA_COM:BUART:tx_state_2\" macrocell 3 2 0 1
+set_location "\CONFIG_COM:BUART:sTX:sCLOCK:TxBitClkGen\" datapathcell 1 3 2 
+set_location "\CONFIG_COM:BUART:tx_bitclk_enable_pre\" macrocell 1 1 1 2
+set_location "\CONFIG_COM:BUART:rx_status_5\" macrocell 0 4 0 2
+set_location "\DATA_COM:BUART:rx_status_5\" macrocell 0 3 1 2
+set_location "\CONFIG_COM:BUART:rx_postpoll\" macrocell 0 2 1 2
+set_location "\HMC5883L_I2C:bI2C_UDB:clk_eq_reg\" macrocell 3 4 1 2
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_0_split\" macrocell 1 3 0 0
+set_location "\HMC5883L_I2C:bI2C_UDB:scl_in_reg\" macrocell 3 4 1 0
+set_location "\HMC5883L_I2C:bI2C_UDB:cs_addr_shifter_0\" macrocell 3 5 0 1
+set_location "\HMC5883L_I2C:bI2C_UDB:lost_arb_reg\" macrocell 2 4 1 3
+set_location "Net_154" macrocell 3 3 0 0
+set_location "\HMC5883L_I2C:bI2C_UDB:bus_busy_reg\" macrocell 3 4 0 0
+set_location "MODIN1_1" macrocell 0 2 1 0
+set_location "\HMC5883L_I2C:bI2C_UDB:cs_addr_clkgen_1\" macrocell 3 5 0 3
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_1\" macrocell 2 5 1 0
+set_location "\DATA_COM:BUART:rx_state_0\" macrocell 2 1 0 2
+set_location "\LIS331HH_SPI:BSPIM:sR8:Dp:u0\" datapathcell 3 2 2 
+set_location "\DATA_COM:BUART:rx_status_4\" macrocell 1 1 1 0
+set_location "\HMC5883L_I2C:bI2C_UDB:status_0\" macrocell 3 5 1 1
+set_location "\HMC5883L_I2C:bI2C_UDB:Shifter:u0\" datapathcell 2 5 2 
+set_location "\HMC5883L_I2C:bI2C_UDB:status_3\" macrocell 2 4 1 0
+set_location "\CONFIG_COM:BUART:sRX:RxBitCounter\" count7cell 0 4 7 
+set_location "\CONFIG_COM:BUART:rx_state_0\" macrocell 0 4 1 0
+set_location "\HMC5883L_I2C:bI2C_UDB:sda_in_last2_reg\" macrocell 3 4 0 1
+set_location "\DATA_COM:BUART:tx_bitclk\" macrocell 2 2 1 1
+set_location "\DATA_COM:BUART:tx_state_0\" macrocell 3 1 1 1
+set_location "\LIS331HH_SPI:BSPIM:state_0\" macrocell 3 3 1 1
+set_location "\DATA_COM:BUART:sTX:TxShifter:u0\" datapathcell 3 1 2 
+set_location "\DATA_COM:BUART:rx_status_3\" macrocell 2 1 0 1
+set_location "\LIS331HH_SPI:BSPIM:load_rx_data\" macrocell 3 2 1 1
+set_location "\LIS331HH_SPI:BSPIM:BitCounter\" count7cell 3 3 7 
+set_location "Net_23" macrocell 3 2 1 0
+set_location "\DATA_COM:BUART:rx_state_2\" macrocell 0 2 0 0
+set_location "\CONFIG_COM:BUART:tx_status_0\" macrocell 1 1 0 1
+set_location "\DATA_COM:BUART:tx_status_0\" macrocell 3 1 1 2
+set_location "\HMC5883L_I2C:bI2C_UDB:StsReg\" statusicell 2 3 4 
+set_location "\HMC5883L_I2C:bI2C_UDB:status_5\" macrocell 3 4 0 2
+set_location "\CONFIG_COM:BUART:tx_bitclk\" macrocell 1 1 1 1
+set_location "\DATA_COM:BUART:txn\" macrocell 3 1 0 1
+set_location "\DATA_COM:BUART:sRX:RxSts\" statusicell 1 2 4 
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_4\" macrocell 1 4 0 1
+set_location "\LIS331HH_SPI:BSPIM:cnt_enable\" macrocell 3 3 0 1
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_2_split\" macrocell 2 5 0 0
+set_location "\CONFIG_COM:BUART:rx_bitclk_enable\" macrocell 0 2 1 3
+set_location "\HMC5883L_I2C:scl_x_wire\" macrocell 3 5 1 0
+set_location "\DATA_COM:BUART:tx_state_1\" macrocell 3 2 0 0
+set_location "\HMC5883L_I2C:bI2C_UDB:scl_in_last_reg\" macrocell 3 4 0 3
+set_location "\DATA_COM:BUART:tx_status_2\" macrocell 3 1 0 0
+set_location "\HMC5883L_I2C:bI2C_UDB:scl_in_last2_reg\" macrocell 3 4 1 3
+set_location "\DATA_COM:BUART:rx_counter_load\" macrocell 0 1 0 1
+set_location "\CONFIG_COM:BUART:rx_state_3\" macrocell 0 3 0 1
+set_location "\HMC5883L_I2C:sda_x_wire\" macrocell 1 4 0 0
+set_location "\DATA_COM:BUART:rx_postpoll\" macrocell 0 1 1 1
+set_location "MODIN1_0" macrocell 0 2 1 1
+set_location "\LIS331HH_SPI:BSPIM:rx_status_6\" macrocell 2 1 1 2
+set_location "\DATA_COM:BUART:counter_load_not\" macrocell 3 2 0 3
+set_location "\CONFIG_COM:BUART:counter_load_not\" macrocell 1 2 1 3
+set_location "\HMC5883L_I2C:bI2C_UDB:m_state_2\" macrocell 3 5 0 0
+set_location "\CONFIG_COM:BUART:rx_load_fifo\" macrocell 0 3 0 3
+set_location "\LIS331HH_SPI:BSPIM:RxStsReg\" statusicell 2 1 4 
+set_location "\CONFIG_COM:BUART:rx_status_3\" macrocell 0 4 1 3
+set_location "\DATA_COM:BUART:tx_bitclk_enable_pre\" macrocell 2 2 1 2
+set_location "\LIS331HH_SPI:BSPIM:state_1\" macrocell 2 2 0 1
+set_location "\DATA_COM:BUART:pollcount_0\" macrocell 0 1 1 2
+set_location "\HMC5883L_I2C:bI2C_UDB:cs_addr_clkgen_0\" macrocell 2 4 1 1
+set_location "\CONFIG_COM:BUART:sTX:TxSts\" statusicell 1 1 4 
+set_location "\DATA_COM:BUART:rx_state_stop1_reg\" macrocell 0 2 0 3
+set_location "\HMC5883L_I2C:bI2C_UDB:status_1\" macrocell 2 4 0 0
+set_location "\CONFIG_COM:BUART:rx_state_stop1_reg\" macrocell 0 3 0 2
+set_location "\DATA_COM:BUART:sRX:RxBitCounter\" count7cell 0 1 7 
+set_location "Net_47" macrocell 1 2 1 2
+set_location "\DATA_COM:BUART:sRX:RxShifter:u0\" datapathcell 0 1 2 
+set_location "\DATA_COM:BUART:rx_load_fifo\" macrocell 0 2 0 1
+set_location "\CONFIG_COM:BUART:rx_last\" macrocell 0 4 1 1
+set_location "\LIS331HH_SPI:BSPIM:state_2\" macrocell 2 2 0 0
+set_location "\HMC5883L_I2C:bI2C_UDB:status_2\" macrocell 1 2 1 0
+set_location "\HMC5883L_I2C:bI2C_UDB:cnt_reset\" macrocell 3 4 1 1
+# Note: port 12 is the logical name for port 7
+set_io "Tx(0)" iocell 12 5
+set_location "ClockBlock" clockblockcell -1 -1 0
+set_io "SDA(0)" iocell 0 6
+set_location "\HMC5883L_I2C:I2C_IRQ\" interrupt -1 -1 0
+set_location "\HMC5883L_I2C:bI2C_UDB:SyncCtl:CtrlReg\" controlcell 1 3 6 
+set_io "MISO(0)" iocell 0 1
+# Note: port 12 is the logical name for port 7
+set_io "Tx_1(0)" iocell 12 1
+set_io "SCLK(0)" iocell 0 2
+# Note: port 12 is the logical name for port 7
+set_io "Rx_1(0)" iocell 12 0
+set_io "MOSI(0)" iocell 0 3
+# Note: port 12 is the logical name for port 7
+set_io "Rx(0)" iocell 12 4
+set_io "CS(0)" iocell 0 0
+set_io "SCL(0)" iocell 0 7
+set_io "RST_1(0)" iocell 2 5

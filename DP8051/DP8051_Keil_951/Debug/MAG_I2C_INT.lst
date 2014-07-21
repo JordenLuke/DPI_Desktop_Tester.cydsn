@@ -1,0 +1,1292 @@
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE MAG_I2C_INT
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\MAG_I2C_INT.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\MAG_I2C_INT.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\MAG_I2C_INT.lst) C
+                    -D DB NOIP OT(2,SIZE) DF(DEBUG) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\MAG_I2C_INT.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: MAG_I2C_INT.c
+   3          * Version 3.30
+   4          *
+   5          * Description:
+   6          *  This file provides the source code of Interrupt Service Routine (ISR)
+   7          *  for I2C component.
+   8          *
+   9          *  Note:
+  10          *
+  11          ********************************************************************************
+  12          * Copyright 2008-2012, Cypress Semiconductor Corporation.  All rights reserved.
+  13          * You may use this file only in accordance with the license, terms, conditions,
+  14          * disclaimers, and limitations in the end user license agreement accompanying
+  15          * the software package with which this file was provided.
+  16          *******************************************************************************/
+  17          
+  18          #include "MAG_I2C_PVT.h"
+  19          
+  20          
+  21          /*******************************************************************************
+  22          *  Place your includes, defines and code here
+  23          ********************************************************************************/
+  24          /* `#START MAG_I2C_ISR_intc` */
+  25          
+  26          /* `#END` */
+  27          
+  28          
+  29          /*******************************************************************************
+  30          * Function Name: MAG_I2C_ISR
+  31          ********************************************************************************
+  32          *
+  33          * Summary:
+  34          *  Handler for I2C interrupt. The Slave and Master operations are handled here.
+  35          *
+  36          * Parameters:
+  37          *  void
+  38          *
+  39          * Return:
+  40          *  void
+  41          *
+  42          * Reentrant:
+  43          *  No
+  44          *
+  45          *******************************************************************************/
+  46          CY_ISR(MAG_I2C_ISR)
+  47          {
+  48   1          #if(MAG_I2C_MODE_SLAVE_ENABLED)
+                     uint8  tmp8;
+                  #endif  /* (MAG_I2C_MODE_SLAVE_ENABLED) */
+  51   1      
+  52   1          uint8  tmpCsr;
+  53   1      
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 2   
+
+  54   1          #if(MAG_I2C_TIMEOUT_FF_ENABLED)
+                      if(0u != MAG_I2C_TimeoutGetStatus())
+                      {
+                          MAG_I2C_TimeoutReset();
+                          MAG_I2C_state = MAG_I2C_SM_EXIT_IDLE;
+                          /* MAG_I2C_CSR_REG should be cleared after reset */
+                      }
+                  #endif /* (MAG_I2C_TIMEOUT_FF_ENABLED) */
+  62   1      
+  63   1      
+  64   1          tmpCsr = MAG_I2C_CSR_REG;      /* Make copy as interrupts clear */
+  65   1      
+  66   1          #if(MAG_I2C_MODE_MULTI_MASTER_SLAVE_ENABLED)
+                      if(MAG_I2C_CHECK_START_GEN(MAG_I2C_MCSR_REG))
+                      {
+                          MAG_I2C_CLEAR_START_GEN;
+              
+                          /* Set READ complete, but was aborted */
+                          MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_ERR_XFER |
+                                                          MAG_I2C_GET_MSTAT_CMPLT);
+              
+                          /* The slave was addressed */
+                          MAG_I2C_state = MAG_I2C_SM_SLAVE;
+                      }
+                  #endif /* (MAG_I2C_MODE_MULTI_MASTER_SLAVE_ENABLED) */
+  79   1      
+  80   1      
+  81   1          #if(MAG_I2C_MODE_MULTI_MASTER_ENABLED)
+                      if(MAG_I2C_CHECK_LOST_ARB(tmpCsr))
+                      {
+                          /* Set errors */
+                          MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_ERR_XFER     |
+                                                          MAG_I2C_MSTAT_ERR_ARB_LOST |
+                                                          MAG_I2C_GET_MSTAT_CMPLT);
+              
+                          MAG_I2C_DISABLE_INT_ON_STOP; /* Interrupt on Stop is enabled by write */
+              
+                          #if(MAG_I2C_MODE_MULTI_MASTER_SLAVE_ENABLED)
+                              if(MAG_I2C_CHECK_ADDRESS_STS(tmpCsr))
+                              {
+                                  /* The slave was addressed */
+                                  MAG_I2C_state = MAG_I2C_SM_SLAVE;
+                              }
+                              else
+                              {
+                                  MAG_I2C_BUS_RELEASE;
+              
+                                  MAG_I2C_state = MAG_I2C_SM_EXIT_IDLE;
+                              }
+                          #else
+                              MAG_I2C_BUS_RELEASE;
+              
+                              MAG_I2C_state = MAG_I2C_SM_EXIT_IDLE;
+              
+                          #endif /* (MAG_I2C_MODE_MULTI_MASTER_SLAVE_ENABLED) */
+                      }
+                  #endif /* (MAG_I2C_MODE_MULTI_MASTER_ENABLED) */
+ 111   1      
+ 112   1          /* Check for Master operation mode */
+ 113   1          if(MAG_I2C_CHECK_SM_MASTER)
+ 114   1          {
+ 115   2              #if(MAG_I2C_MODE_MASTER_ENABLED)
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 3   
+
+ 116   2                  if(MAG_I2C_CHECK_BYTE_COMPLETE(tmpCsr))
+ 117   2                  {
+ 118   3                      switch (MAG_I2C_state)
+ 119   3                      {
+ 120   4                      case MAG_I2C_SM_MSTR_WR_ADDR:  /* After address is sent, WRITE data */
+ 121   4                      case MAG_I2C_SM_MSTR_RD_ADDR:  /* After address is sent, READ  data */
+ 122   4      
+ 123   4                          tmpCsr &= ((uint8) ~MAG_I2C_CSR_STOP_STATUS); /* Clear STOP bit history on address pha
+             -se */
+ 124   4                          
+ 125   4                          if(MAG_I2C_CHECK_ADDR_ACK(tmpCsr))
+ 126   4                          {
+ 127   5                              /* Setup for transmit or receive of data */
+ 128   5                              if(MAG_I2C_state == MAG_I2C_SM_MSTR_WR_ADDR)   /* TRANSMIT data */
+ 129   5                              {
+ 130   6                                  /* Check if at least one byte to transfer */
+ 131   6                                  if(MAG_I2C_mstrWrBufSize > 0u)
+ 132   6                                  {
+ 133   7                                      /* Load the 1st data byte */
+ 134   7                                      MAG_I2C_DATA_REG = MAG_I2C_mstrWrBufPtr[0u];
+ 135   7                                      MAG_I2C_TRANSMIT_DATA;
+ 136   7                                      MAG_I2C_mstrWrBufIndex = 1u;   /* Set index to 2nd element */
+ 137   7      
+ 138   7                                      /* Set transmit state until done */
+ 139   7                                      MAG_I2C_state = MAG_I2C_SM_MSTR_WR_DATA;
+ 140   7                                  }
+ 141   6                                  /* End of buffer: complete writing */
+ 142   6                                  else if(MAG_I2C_CHECK_NO_STOP(MAG_I2C_mstrControl))
+ 143   6                                  {
+ 144   7                                      #if(CY_PSOC5A)
+                                                  /* Do not handles 0 bytes transfer - HALT is NOT allowed */
+                                                  MAG_I2C_ENABLE_INT_ON_STOP;
+                                                  MAG_I2C_GENERATE_STOP;
+                                              
+                                              #else
+ 150   7                                          /* Set WRITE complete and Master HALTED */
+ 151   7                                          MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_XFER_HALT |
+ 152   7                                                                          MAG_I2C_MSTAT_WR_CMPLT);
+ 153   7      
+ 154   7                                          MAG_I2C_state = MAG_I2C_SM_MSTR_HALT; /* Expect RESTART */
+ 155   7                                          MAG_I2C_DisableInt();
+ 156   7                                      
+ 157   7                                      #endif /* (CY_PSOC5A) */
+ 158   7                                  }
+ 159   6                                  else
+ 160   6                                  {
+ 161   7                                      MAG_I2C_ENABLE_INT_ON_STOP; /* Enable interrupt on STOP, to catch it */
+ 162   7                                      MAG_I2C_GENERATE_STOP;
+ 163   7                                  }
+ 164   6                              }
+ 165   5                              else  /* Master Receive data */
+ 166   5                              {
+ 167   6                                  MAG_I2C_READY_TO_READ; /* Release bus to read data */
+ 168   6      
+ 169   6                                  MAG_I2C_state  = MAG_I2C_SM_MSTR_RD_DATA;
+ 170   6                              }
+ 171   5                          }
+ 172   4                          /* Address is NACKed */
+ 173   4                          else if(MAG_I2C_CHECK_ADDR_NAK(tmpCsr))
+ 174   4                          {
+ 175   5                              /* Set Address NAK error */
+ 176   5                              MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_ERR_XFER |
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 4   
+
+ 177   5                                                              MAG_I2C_MSTAT_ERR_ADDR_NAK);
+ 178   5                                                              
+ 179   5                              if(MAG_I2C_CHECK_NO_STOP(MAG_I2C_mstrControl))
+ 180   5                              {
+ 181   6                                  MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_XFER_HALT | 
+ 182   6                                                                  MAG_I2C_GET_MSTAT_CMPLT);
+ 183   6      
+ 184   6                                  MAG_I2C_state = MAG_I2C_SM_MSTR_HALT; /* Expect RESTART */
+ 185   6                                  MAG_I2C_DisableInt();
+ 186   6                              }
+ 187   5                              else  /* Do normal Stop */
+ 188   5                              {
+ 189   6                                  MAG_I2C_ENABLE_INT_ON_STOP; /* Enable interrupt on STOP, to catch it */
+ 190   6                                  MAG_I2C_GENERATE_STOP;
+ 191   6                              }
+ 192   5                          }
+ 193   4                          else
+ 194   4                          {
+ 195   5                              /* Address phase is not set for some reason: error */
+ 196   5                              #if(MAG_I2C_TIMEOUT_ENABLED)
+                                          /* Exit from interrupt to take a chance for timeout timer handle this case */
+                                          MAG_I2C_DisableInt();
+                                          MAG_I2C_ClearPendingInt();
+                                      #else
+ 201   5                                  /* Block execution flow: unexpected condition */
+ 202   5                                  CYASSERT(0u != 0u);
+ 203   5                              #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+ 204   5                          }
+ 205   4                          break;
+ 206   4      
+ 207   4                      case MAG_I2C_SM_MSTR_WR_DATA:
+ 208   4      
+ 209   4                          if(MAG_I2C_CHECK_DATA_ACK(tmpCsr))
+ 210   4                          {
+ 211   5                              /* Check if end of buffer */
+ 212   5                              if(MAG_I2C_mstrWrBufIndex  < MAG_I2C_mstrWrBufSize)
+ 213   5                              {
+ 214   6                                  MAG_I2C_DATA_REG =
+ 215   6                                                           MAG_I2C_mstrWrBufPtr[MAG_I2C_mstrWrBufIndex];
+ 216   6                                  MAG_I2C_TRANSMIT_DATA;
+ 217   6                                  MAG_I2C_mstrWrBufIndex++;
+ 218   6                              }
+ 219   5                              /* End of buffer: complete writing */
+ 220   5                              else if(MAG_I2C_CHECK_NO_STOP(MAG_I2C_mstrControl))
+ 221   5                              {
+ 222   6                                  /* Set WRITE complete and Master HALTED */
+ 223   6                                  MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_XFER_HALT |
+ 224   6                                                                  MAG_I2C_MSTAT_WR_CMPLT);
+ 225   6      
+ 226   6                                  MAG_I2C_state = MAG_I2C_SM_MSTR_HALT;    /* Expect RESTART */
+ 227   6                                  MAG_I2C_DisableInt();
+ 228   6                              }
+ 229   5                              else  /* Do normal STOP */
+ 230   5                              {
+ 231   6                                  MAG_I2C_Workaround();          /* Workaround: empty function */
+ 232   6                                  MAG_I2C_ENABLE_INT_ON_STOP;    /* Enable interrupt on STOP, to catch it */
+ 233   6                                  MAG_I2C_GENERATE_STOP;
+ 234   6                              }
+ 235   5                          }
+ 236   4                          /* Last byte NAKed: end writing */
+ 237   4                          else if(MAG_I2C_CHECK_NO_STOP(MAG_I2C_mstrControl))
+ 238   4                          {
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 5   
+
+ 239   5                              /* Set WRITE complete, SHORT transfer and Master HALTED */
+ 240   5                              MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_ERR_XFER       |
+ 241   5                                                              MAG_I2C_MSTAT_ERR_SHORT_XFER |
+ 242   5                                                              MAG_I2C_MSTAT_XFER_HALT      |
+ 243   5                                                              MAG_I2C_MSTAT_WR_CMPLT);
+ 244   5      
+ 245   5                              MAG_I2C_state = MAG_I2C_SM_MSTR_HALT;    /* Expect RESTART */
+ 246   5                              MAG_I2C_DisableInt();
+ 247   5                          }
+ 248   4                          else  /* Do normal STOP */
+ 249   4                          {
+ 250   5                              MAG_I2C_ENABLE_INT_ON_STOP;    /* Enable interrupt on STOP, to catch it */
+ 251   5                              MAG_I2C_GENERATE_STOP;
+ 252   5      
+ 253   5                              /* Set SHORT and ERR transfer */
+ 254   5                              MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_ERR_SHORT_XFER |
+ 255   5                                                              MAG_I2C_MSTAT_ERR_XFER);
+ 256   5                          }
+ 257   4                          
+ 258   4                          break;
+ 259   4      
+ 260   4                      case MAG_I2C_SM_MSTR_RD_DATA:
+ 261   4      
+ 262   4                          MAG_I2C_mstrRdBufPtr[MAG_I2C_mstrRdBufIndex] = MAG_I2C_DATA_REG;
+ 263   4                          MAG_I2C_mstrRdBufIndex++;
+ 264   4      
+ 265   4                          /* Check if end of buffer */
+ 266   4                          if(MAG_I2C_mstrRdBufIndex < MAG_I2C_mstrRdBufSize)
+ 267   4                          {
+ 268   5                              MAG_I2C_ACK_AND_RECEIVE;       /* ACK and receive byte */
+ 269   5                          }
+ 270   4                          /* End of buffer: complete reading */
+ 271   4                          else if(MAG_I2C_CHECK_NO_STOP(MAG_I2C_mstrControl))
+ 272   4                          {                        
+ 273   5                              /* Set READ complete and Master HALTED */
+ 274   5                              MAG_I2C_mstrStatus |= (MAG_I2C_MSTAT_XFER_HALT |
+ 275   5                                                              MAG_I2C_MSTAT_RD_CMPLT);
+ 276   5                              
+ 277   5                              MAG_I2C_state = MAG_I2C_SM_MSTR_HALT;    /* Expect RESTART */
+ 278   5                              MAG_I2C_DisableInt();
+ 279   5                          }
+ 280   4                          else
+ 281   4                          {
+ 282   5                              MAG_I2C_ENABLE_INT_ON_STOP;
+ 283   5                              MAG_I2C_NAK_AND_RECEIVE;       /* NACK and TRY to generate STOP */
+ 284   5                          }
+ 285   4                          break;
+ 286   4      
+ 287   4                      default: /* This is an invalid state and should not occur */
+ 288   4      
+ 289   4                          #if(MAG_I2C_TIMEOUT_ENABLED)
+                                      /* Exit from interrupt to take a chance for timeout timer handle this case */
+                                      MAG_I2C_DisableInt();
+                                      MAG_I2C_ClearPendingInt();
+                                  #else
+ 294   4                              /* Block execution flow: unexpected condition */
+ 295   4                              CYASSERT(0u != 0u);
+ 296   4                          #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+ 297   4      
+ 298   4                          break;
+ 299   4                      }
+ 300   3                  }
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 6   
+
+ 301   2      
+ 302   2                  /* Catches the Stop: end of transaction */
+ 303   2                  if(MAG_I2C_CHECK_STOP_STS(tmpCsr))
+ 304   2                  {
+ 305   3                      MAG_I2C_mstrStatus |= MAG_I2C_GET_MSTAT_CMPLT;
+ 306   3      
+ 307   3                      MAG_I2C_DISABLE_INT_ON_STOP;
+ 308   3                      MAG_I2C_state = MAG_I2C_SM_IDLE;
+ 309   3                  }
+ 310   2              #endif /* (MAG_I2C_MODE_MASTER_ENABLED) */
+ 311   2          }
+ 312   1          else if(MAG_I2C_CHECK_SM_SLAVE)
+ 313   1          {
+ 314   2              #if(MAG_I2C_MODE_SLAVE_ENABLED)
+                          
+                          if((MAG_I2C_CHECK_STOP_STS(tmpCsr)) || /* Stop || Restart */
+                             (MAG_I2C_CHECK_BYTE_COMPLETE(tmpCsr) && MAG_I2C_CHECK_ADDRESS_STS(tmpCsr)))
+                          {
+                              /* Catch end of master write transcation: use interrupt on Stop */
+                              /* The STOP bit history on address phase does not have correct state */
+                              if(MAG_I2C_SM_SL_WR_DATA == MAG_I2C_state)
+                              {
+                                  MAG_I2C_DISABLE_INT_ON_STOP;
+              
+                                  MAG_I2C_slStatus &= ((uint8) ~MAG_I2C_SSTAT_WR_BUSY);
+                                  MAG_I2C_slStatus |= ((uint8)  MAG_I2C_SSTAT_WR_CMPLT);
+              
+                                  MAG_I2C_state = MAG_I2C_SM_IDLE;
+                              }
+                          }
+              
+                          if(MAG_I2C_CHECK_BYTE_COMPLETE(tmpCsr))
+                          {
+                              /* The address only issued after Start or ReStart: so check address
+                                 to catch this events:
+                                  FF : sets Addr phase with byte_complete interrupt trigger.
+                                  UDB: sets Addr phase immediately after Start or ReStart. */
+                              if(MAG_I2C_CHECK_ADDRESS_STS(tmpCsr))
+                              {
+                                  /* Check for software address detection */
+                                  #if(MAG_I2C_SW_ADRR_DECODE)
+                                      tmp8 = MAG_I2C_GET_SLAVE_ADDR(MAG_I2C_DATA_REG);
+              
+                                      if(tmp8 == MAG_I2C_slAddress)   /* Check for address match */
+                                      {
+                                          if(0u != (MAG_I2C_DATA_REG & MAG_I2C_READ_FLAG))
+                                          {
+                                              /* Place code to prepare read buffer here                  */
+                                              /* `#START MAG_I2C_SW_PREPARE_READ_BUF_interrupt` */
+              
+                                              /* `#END` */
+              
+                                              /* Prepare next opeation to read, get data and place in data register */
+                                              if(MAG_I2C_slRdBufIndex < MAG_I2C_slRdBufSize)
+                                              {
+                                                  /* Load first data byte from array */
+                                                  MAG_I2C_DATA_REG = MAG_I2C_slRdBufPtr[MAG_I2C_slRdBufIndex];
+                                                  MAG_I2C_ACK_AND_TRANSMIT;
+                                                  MAG_I2C_slRdBufIndex++;
+              
+                                                  MAG_I2C_slStatus |= MAG_I2C_SSTAT_RD_BUSY;
+                                              }
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 7   
+
+                                              else    /* Overflow: provide 0xFF on the bus */
+                                              {
+                                                  MAG_I2C_DATA_REG = MAG_I2C_OVERFLOW_RETURN;
+                                                  MAG_I2C_ACK_AND_TRANSMIT;
+              
+                                                  MAG_I2C_slStatus  |= (MAG_I2C_SSTAT_RD_BUSY |
+                                                                                 MAG_I2C_SSTAT_RD_ERR_OVFL);
+                                              }
+              
+                                              MAG_I2C_state = MAG_I2C_SM_SL_RD_DATA;
+                                          }
+                                          else  /* Write transaction: receive 1st byte */
+                                          {
+                                              MAG_I2C_ACK_AND_RECEIVE;
+                                              MAG_I2C_state = MAG_I2C_SM_SL_WR_DATA;
+              
+                                              MAG_I2C_slStatus |= MAG_I2C_SSTAT_WR_BUSY;
+                                              MAG_I2C_ENABLE_INT_ON_STOP;
+                                          }
+                                      }    
+                                      else
+                                      {
+                                          /*     Place code to compare for additional address here    */
+                                          /* `#START MAG_I2C_SW_ADDR_COMPARE_interruptStart` */
+              
+                                          /* `#END` */
+                                          
+                                          MAG_I2C_NAK_AND_RECEIVE;   /* NACK address */
+              
+                                          /* Place code to end of condition for NACK generation here */
+                                          /* `#START MAG_I2C_SW_ADDR_COMPARE_interruptEnd`  */
+              
+                                          /* `#END` */
+                                      }
+                                      
+                                  #else /* (MAG_I2C_HW_ADRR_DECODE) */
+                                      
+                                      if(0u != (MAG_I2C_DATA_REG & MAG_I2C_READ_FLAG))
+                                      {
+                                          /* Place code to prepare read buffer here                  */
+                                          /* `#START MAG_I2C_HW_PREPARE_READ_BUF_interrupt` */
+              
+                                          /* `#END` */
+              
+                                          /* Prepare next opeation to read, get data and place in data register */
+                                          if(MAG_I2C_slRdBufIndex < MAG_I2C_slRdBufSize)
+                                          {
+                                              /* Load first data byte from array */
+                                              MAG_I2C_DATA_REG = MAG_I2C_slRdBufPtr[MAG_I2C_slRdBufIndex];
+                                              MAG_I2C_ACK_AND_TRANSMIT;
+                                              MAG_I2C_slRdBufIndex++;
+              
+                                              MAG_I2C_slStatus |= MAG_I2C_SSTAT_RD_BUSY;
+                                          }
+                                          else    /* Overflow: provide 0xFF on the bus */
+                                          {
+                                              MAG_I2C_DATA_REG = MAG_I2C_OVERFLOW_RETURN;
+                                              MAG_I2C_ACK_AND_TRANSMIT;
+              
+                                              MAG_I2C_slStatus  |= (MAG_I2C_SSTAT_RD_BUSY |
+                                                                             MAG_I2C_SSTAT_RD_ERR_OVFL);
+                                          }
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 8   
+
+              
+                                          MAG_I2C_state = MAG_I2C_SM_SL_RD_DATA;
+                                      }
+                                      else  /* Write transaction: receive 1st byte */
+                                      {
+                                          MAG_I2C_ACK_AND_RECEIVE;
+                                          MAG_I2C_state = MAG_I2C_SM_SL_WR_DATA;
+              
+                                          MAG_I2C_slStatus |= MAG_I2C_SSTAT_WR_BUSY;
+                                          MAG_I2C_ENABLE_INT_ON_STOP;
+                                      }
+                                      
+                                  #endif /* (MAG_I2C_SW_ADRR_DECODE) */
+                              }
+                              /* Data states */
+                              /* Data master writes into slave */
+                              else if(MAG_I2C_state == MAG_I2C_SM_SL_WR_DATA)
+                              {
+                                  if(MAG_I2C_slWrBufIndex < MAG_I2C_slWrBufSize)
+                                  {
+                                      tmp8 = MAG_I2C_DATA_REG;
+                                      MAG_I2C_ACK_AND_RECEIVE;
+                                      MAG_I2C_slWrBufPtr[MAG_I2C_slWrBufIndex] = tmp8;
+                                      MAG_I2C_slWrBufIndex++;
+                                  }
+                                  else  /* of array: complete write, send NACK */
+                                  {
+                                      MAG_I2C_NAK_AND_RECEIVE;
+              
+                                      MAG_I2C_slStatus |= MAG_I2C_SSTAT_WR_ERR_OVFL;
+                                  }
+                              }
+                              /* Data master reads from slave */
+                              else if(MAG_I2C_state == MAG_I2C_SM_SL_RD_DATA)
+                              {
+                                  if(MAG_I2C_CHECK_DATA_ACK(tmpCsr))
+                                  {
+                                      if(MAG_I2C_slRdBufIndex < MAG_I2C_slRdBufSize)
+                                      {
+                                           /* Get data from array */
+                                          MAG_I2C_DATA_REG = MAG_I2C_slRdBufPtr[MAG_I2C_slRdBufIndex];
+                                          MAG_I2C_TRANSMIT_DATA;
+                                          MAG_I2C_slRdBufIndex++;
+                                      }
+                                      else   /* Overflow: provide 0xFF on the bus */
+                                      {
+                                          MAG_I2C_DATA_REG = MAG_I2C_OVERFLOW_RETURN;
+                                          MAG_I2C_TRANSMIT_DATA;
+              
+                                          MAG_I2C_slStatus |= MAG_I2C_SSTAT_RD_ERR_OVFL;
+                                      }
+                                  }
+                                  else  /* Last byte was NACKed: read complete */
+                                  {
+                                      /* Only NACK appears on the bus */
+                                      MAG_I2C_DATA_REG = MAG_I2C_OVERFLOW_RETURN;
+                                      MAG_I2C_NAK_AND_TRANSMIT;
+              
+                                      MAG_I2C_slStatus &= ((uint8) ~MAG_I2C_SSTAT_RD_BUSY);
+                                      MAG_I2C_slStatus |= ((uint8)  MAG_I2C_SSTAT_RD_CMPLT);
+              
+                                      MAG_I2C_state = MAG_I2C_SM_IDLE;
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 9   
+
+                                  }
+                              }
+                              else
+                              {
+                                  #if(MAG_I2C_TIMEOUT_ENABLED)
+                                      /* Exit from interrupt to take a chance for timeout timer handle this case */
+                                      MAG_I2C_DisableInt();
+                                      MAG_I2C_ClearPendingInt();
+                                  #else
+                                      /* Block execution flow: unexpected condition */
+                                      CYASSERT(0u != 0u);
+                                  #endif /* (MAG_I2C_TIMEOUT_ENABLED) */
+                              }
+                          }
+                      #endif /* (MAG_I2C_MODE_SLAVE_ENABLED) */
+ 502   2          }
+ 503   1          else
+ 504   1          {
+ 505   2              /* The FSM skips master and slave processing: return to IDLE */
+ 506   2              MAG_I2C_state = MAG_I2C_SM_IDLE;
+ 507   2          }
+ 508   1      }
+ 509          
+ 510          
+ 511          #if((MAG_I2C_FF_IMPLEMENTED) && (MAG_I2C_WAKEUP_ENABLED))
+                  /*******************************************************************************
+                  * Function Name: MAG_I2C_WAKEUP_ISR
+                  ********************************************************************************
+                  *
+                  * Summary:
+                  *  Empty interrupt handler to trigger after wakeup.
+                  *
+                  * Parameters:
+                  *  void
+                  *
+                  * Return:
+                  *  void
+                  *
+                  *******************************************************************************/
+                  CY_ISR(MAG_I2C_WAKEUP_ISR)
+                  {
+                      MAG_I2C_wakeupSource = 1u;  /* I2C was wakeup source */
+                      /* The SCL is stretched unitl the I2C_Wake() is called */
+                  }
+              #endif /* ((MAG_I2C_FF_IMPLEMENTED) && (MAG_I2C_WAKEUP_ENABLED))*/
+ 532          
+ 533          
+ 534          /* [] END OF FILE */
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 10  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION MAG_I2C_ISR (BEGIN)
+0000 C0E0              PUSH    ACC
+0002 C0F0              PUSH    B
+0004 C083              PUSH    DPH
+0006 C082              PUSH    DPL
+0008 C085              PUSH    DPH1
+000A C084              PUSH    DPL1
+000C C086              PUSH    DPS
+000E 758600            MOV     DPS,#00H
+0011 C000        E     PUSH    ?C?XPAGE1SFR
+0013 750000      E     MOV     ?C?XPAGE1SFR,#?C?XPAGE1RST
+0016 C0D0              PUSH    PSW
+0018 75D000            MOV     PSW,#00H
+001B C000              PUSH    AR0
+001D C001              PUSH    AR1
+001F C002              PUSH    AR2
+0021 C003              PUSH    AR3
+0023 C004              PUSH    AR4
+0025 C005              PUSH    AR5
+0027 C006              PUSH    AR6
+0029 C007              PUSH    AR7
+                                           ; SOURCE LINE # 46
+                                           ; SOURCE LINE # 64
+002B 90646B            MOV     DPTR,#0646BH
+002E E0                MOVX    A,@DPTR
+002F FF                MOV     R7,A
+0030 900000      R     MOV     DPTR,#tmpCsr
+0033 EF                MOV     A,R7
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 113
+0035 900000      E     MOV     DPTR,#MAG_I2C_state
+0038 E0                MOVX    A,@DPTR
+0039 FF                MOV     R7,A
+003A EF                MOV     A,R7
+003B 5440              ANL     A,#040H
+003D FF                MOV     R7,A
+003E 7E00              MOV     R6,#00H
+0040 EF                MOV     A,R7
+0041 4E                ORL     A,R6
+0042 7003              JNZ     $ + 5H
+0044 020000      R     LJMP    ?C0001
+                                           ; SOURCE LINE # 114
+                                           ; SOURCE LINE # 116
+0047 900000      R     MOV     DPTR,#tmpCsr
+004A E0                MOVX    A,@DPTR
+004B FF                MOV     R7,A
+004C EF                MOV     A,R7
+004D 20E003            JB      ACC.0,$ + 6H
+0050 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 117
+                                           ; SOURCE LINE # 118
+0053 900000      E     MOV     DPTR,#MAG_I2C_state
+0056 E0                MOVX    A,@DPTR
+0057 FF                MOV     R7,A
+0058 EF                MOV     A,R7
+0059 120000      E     LCALL   ?C?CCASE
+005C 0000        R     DW      ?C0005
+005E 45                DB      045H
+005F 0000        R     DW      ?C0039
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 11  
+
+0061 46                DB      046H
+0062 0000        R     DW      ?C0005
+0064 49                DB      049H
+0065 0000        R     DW      ?C0063
+0067 4A                DB      04AH
+0068 0000              DW      00H
+006A 0000        R     DW      ?C0077
+                                           ; SOURCE LINE # 119
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+006C         ?C0005:
+                                           ; SOURCE LINE # 123
+006C 900000      R     MOV     DPTR,#tmpCsr
+006F E0                MOVX    A,@DPTR
+0070 FF                MOV     R7,A
+0071 EF                MOV     A,R7
+0072 54DF              ANL     A,#0DFH
+0074 FF                MOV     R7,A
+0075 900000      R     MOV     DPTR,#tmpCsr
+0078 EF                MOV     A,R7
+0079 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 125
+007A 900000      R     MOV     DPTR,#tmpCsr
+007D E0                MOVX    A,@DPTR
+007E FF                MOV     R7,A
+007F EF                MOV     A,R7
+0080 540A              ANL     A,#0AH
+0082 FF                MOV     R7,A
+0083 7E00              MOV     R6,#00H
+0085 EF                MOV     A,R7
+0086 6408              XRL     A,#08H
+0088 4E                ORL     A,R6
+0089 6003              JZ      $ + 5H
+008B 020000      R     LJMP    ?C0006
+                                           ; SOURCE LINE # 126
+                                           ; SOURCE LINE # 128
+008E 900000      E     MOV     DPTR,#MAG_I2C_state
+0091 E0                MOVX    A,@DPTR
+0092 FF                MOV     R7,A
+0093 EF                MOV     A,R7
+0094 6445              XRL     A,#045H
+0096 7079              JNZ     ?C0024
+                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 131
+0098 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufSize
+009B E0                MOVX    A,@DPTR
+009C FF                MOV     R7,A
+009D EF                MOV     A,R7
+009E D3                SETB    C
+009F 9400              SUBB    A,#00H
+00A1 4029              JC      ?C0008
+                                           ; SOURCE LINE # 132
+                                           ; SOURCE LINE # 134
+00A3 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufPtr
+00A6 120000      E     LCALL   ?C?PLDXDATA
+00A9 120000      E     LCALL   ?C?CLDPTR
+00AC FF                MOV     R7,A
+00AD 906403            MOV     DPTR,#06403H
+00B0 EF                MOV     A,R7
+00B1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 135
+00B2 90647B            MOV     DPTR,#0647BH
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 12  
+
+00B5 7406              MOV     A,#06H
+00B7 F0                MOVX    @DPTR,A
+00B8 906453            MOV     DPTR,#06453H
+00BB E4                CLR     A
+00BC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 136
+00BD 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufIndex
+00C0 7401              MOV     A,#01H
+00C2 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 139
+00C3 900000      E     MOV     DPTR,#MAG_I2C_state
+00C6 7446              MOV     A,#046H
+00C8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 140
+00C9 020000      R     LJMP    ?C0002
+00CC         ?C0008:
+                                           ; SOURCE LINE # 142
+00CC 900000      E     MOV     DPTR,#MAG_I2C_mstrControl
+00CF E0                MOVX    A,@DPTR
+00D0 FF                MOV     R7,A
+00D1 EF                MOV     A,R7
+00D2 5402              ANL     A,#02H
+00D4 FF                MOV     R7,A
+00D5 7E00              MOV     R6,#00H
+00D7 EF                MOV     A,R7
+00D8 4E                ORL     A,R6
+00D9 601D              JZ      ?C0017
+                                           ; SOURCE LINE # 143
+                                           ; SOURCE LINE # 151
+00DB 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+00DE E0                MOVX    A,@DPTR
+00DF FF                MOV     R7,A
+00E0 EF                MOV     A,R7
+00E1 440A              ORL     A,#0AH
+00E3 FF                MOV     R7,A
+00E4 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+00E7 EF                MOV     A,R7
+00E8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 154
+00E9 900000      E     MOV     DPTR,#MAG_I2C_state
+00EC 7460              MOV     A,#060H
+00EE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 155
+00EF 9044C8            MOV     DPTR,#044C8H
+00F2 7401              MOV     A,#01H
+00F4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 158
+00F5 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 160
+00F8         ?C0017:
+                                           ; SOURCE LINE # 161
+00F8 90648B            MOV     DPTR,#0648BH
+00FB E0                MOVX    A,@DPTR
+00FC FF                MOV     R7,A
+00FD EF                MOV     A,R7
+00FE 4420              ORL     A,#020H
+0100 FF                MOV     R7,A
+0101 EF                MOV     A,R7
+0102 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 162
+0103 90647B            MOV     DPTR,#0647BH
+0106 7452              MOV     A,#052H
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 13  
+
+0108 F0                MOVX    @DPTR,A
+0109 906453            MOV     DPTR,#06453H
+010C E4                CLR     A
+010D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 163
+                                           ; SOURCE LINE # 164
+010E 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 166
+0111         ?C0024:
+                                           ; SOURCE LINE # 167
+0111 90647B            MOV     DPTR,#0647BH
+0114 7402              MOV     A,#02H
+0116 F0                MOVX    @DPTR,A
+0117 906453            MOV     DPTR,#06453H
+011A E4                CLR     A
+011B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 169
+011C 900000      E     MOV     DPTR,#MAG_I2C_state
+011F 744A              MOV     A,#04AH
+0121 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 170
+                                           ; SOURCE LINE # 171
+0122 020000      R     LJMP    ?C0002
+0125         ?C0006:
+                                           ; SOURCE LINE # 173
+0125 900000      R     MOV     DPTR,#tmpCsr
+0128 E0                MOVX    A,@DPTR
+0129 FF                MOV     R7,A
+012A EF                MOV     A,R7
+012B 540A              ANL     A,#0AH
+012D FF                MOV     R7,A
+012E 7E00              MOV     R6,#00H
+0130 EF                MOV     A,R7
+0131 640A              XRL     A,#0AH
+0133 4E                ORL     A,R6
+0134 706D              JNZ     ?C0026
+                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 176
+0136 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+0139 E0                MOVX    A,@DPTR
+013A FF                MOV     R7,A
+013B EF                MOV     A,R7
+013C 44A0              ORL     A,#0A0H
+013E FF                MOV     R7,A
+013F 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+0142 EF                MOV     A,R7
+0143 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 179
+0144 900000      E     MOV     DPTR,#MAG_I2C_mstrControl
+0147 E0                MOVX    A,@DPTR
+0148 FF                MOV     R7,A
+0149 EF                MOV     A,R7
+014A 5402              ANL     A,#02H
+014C FF                MOV     R7,A
+014D 7E00              MOV     R6,#00H
+014F EF                MOV     A,R7
+0150 4E                ORL     A,R6
+0151 6037              JZ      ?C0033
+                                           ; SOURCE LINE # 180
+                                           ; SOURCE LINE # 181
+0153 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+0156 E0                MOVX    A,@DPTR
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 14  
+
+0157 FF                MOV     R7,A
+0158 900000      E     MOV     DPTR,#MAG_I2C_state
+015B E0                MOVX    A,@DPTR
+015C FE                MOV     R6,A
+015D EE                MOV     A,R6
+015E 5408              ANL     A,#08H
+0160 FE                MOV     R6,A
+0161 EE                MOV     A,R6
+0162 FD                MOV     R5,A
+0163 7C00              MOV     R4,#00H
+0165 ED                MOV     A,R5
+0166 4C                ORL     A,R4
+0167 6004              JZ      ?C0028
+0169 7E01              MOV     R6,#01H
+016B 8002              SJMP    ?C0029
+016D         ?C0028:
+016D 7E02              MOV     R6,#02H
+016F         ?C0029:
+016F EE                MOV     A,R6
+0170 4408              ORL     A,#08H
+0172 FE                MOV     R6,A
+0173 EF                MOV     A,R7
+0174 4E                ORL     A,R6
+0175 FF                MOV     R7,A
+0176 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+0179 EF                MOV     A,R7
+017A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 184
+017B 900000      E     MOV     DPTR,#MAG_I2C_state
+017E 7460              MOV     A,#060H
+0180 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 185
+0181 9044C8            MOV     DPTR,#044C8H
+0184 7401              MOV     A,#01H
+0186 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 186
+0187 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 188
+018A         ?C0033:
+                                           ; SOURCE LINE # 189
+018A 90648B            MOV     DPTR,#0648BH
+018D E0                MOVX    A,@DPTR
+018E FF                MOV     R7,A
+018F EF                MOV     A,R7
+0190 4420              ORL     A,#020H
+0192 FF                MOV     R7,A
+0193 EF                MOV     A,R7
+0194 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 190
+0195 90647B            MOV     DPTR,#0647BH
+0198 7452              MOV     A,#052H
+019A F0                MOVX    @DPTR,A
+019B 906453            MOV     DPTR,#06453H
+019E E4                CLR     A
+019F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 191
+                                           ; SOURCE LINE # 192
+01A0 020000      R     LJMP    ?C0002
+01A3         ?C0026:
+                                           ; SOURCE LINE # 194
+                                           ; SOURCE LINE # 202
+01A3 7F00              MOV     R7,#00H
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 15  
+
+01A5 120000      E     LCALL   _?CyHalt
+                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 205
+01A8 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 207
+01AB         ?C0039:
+                                           ; SOURCE LINE # 209
+01AB 900000      R     MOV     DPTR,#tmpCsr
+01AE E0                MOVX    A,@DPTR
+01AF FF                MOV     R7,A
+01B0 EF                MOV     A,R7
+01B1 30E103            JNB     ACC.1,$ + 6H
+01B4 020000      R     LJMP    ?C0040
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 212
+01B7 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufSize
+01BA E0                MOVX    A,@DPTR
+01BB FF                MOV     R7,A
+01BC 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufIndex
+01BF E0                MOVX    A,@DPTR
+01C0 FE                MOV     R6,A
+01C1 EE                MOV     A,R6
+01C2 C3                CLR     C
+01C3 9F                SUBB    A,R7
+01C4 502E              JNC     ?C0041
+                                           ; SOURCE LINE # 213
+                                           ; SOURCE LINE # 214
+01C6 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufPtr
+01C9 120000      E     LCALL   ?C?PLDXDATA
+01CC 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufIndex
+01CF E0                MOVX    A,@DPTR
+01D0 FF                MOV     R7,A
+01D1 E9                MOV     A,R1
+01D2 2F                ADD     A,R7
+01D3 F9                MOV     R1,A
+01D4 E4                CLR     A
+01D5 3A                ADDC    A,R2
+01D6 FA                MOV     R2,A
+01D7 120000      E     LCALL   ?C?CLDPTR
+01DA FF                MOV     R7,A
+01DB 906403            MOV     DPTR,#06403H
+01DE EF                MOV     A,R7
+01DF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 216
+01E0 90647B            MOV     DPTR,#0647BH
+01E3 7406              MOV     A,#06H
+01E5 F0                MOVX    @DPTR,A
+01E6 906453            MOV     DPTR,#06453H
+01E9 E4                CLR     A
+01EA F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 217
+01EB 900000      E     MOV     DPTR,#MAG_I2C_mstrWrBufIndex
+01EE E0                MOVX    A,@DPTR
+01EF 04                INC     A
+01F0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 218
+01F1 020000      R     LJMP    ?C0002
+01F4         ?C0041:
+                                           ; SOURCE LINE # 220
+01F4 900000      E     MOV     DPTR,#MAG_I2C_mstrControl
+01F7 E0                MOVX    A,@DPTR
+01F8 FF                MOV     R7,A
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 16  
+
+01F9 EF                MOV     A,R7
+01FA 5402              ANL     A,#02H
+01FC FF                MOV     R7,A
+01FD 7E00              MOV     R6,#00H
+01FF EF                MOV     A,R7
+0200 4E                ORL     A,R6
+0201 601D              JZ      ?C0046
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 223
+0203 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+0206 E0                MOVX    A,@DPTR
+0207 FF                MOV     R7,A
+0208 EF                MOV     A,R7
+0209 440A              ORL     A,#0AH
+020B FF                MOV     R7,A
+020C 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+020F EF                MOV     A,R7
+0210 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 226
+0211 900000      E     MOV     DPTR,#MAG_I2C_state
+0214 7460              MOV     A,#060H
+0216 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 227
+0217 9044C8            MOV     DPTR,#044C8H
+021A 7401              MOV     A,#01H
+021C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 228
+021D 020000      R     LJMP    ?C0002
+0220         ?C0046:
+                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 231
+0220 120000      E     LCALL   MAG_I2C_Workaround
+                                           ; SOURCE LINE # 232
+0223 90648B            MOV     DPTR,#0648BH
+0226 E0                MOVX    A,@DPTR
+0227 FF                MOV     R7,A
+0228 EF                MOV     A,R7
+0229 4420              ORL     A,#020H
+022B FF                MOV     R7,A
+022C EF                MOV     A,R7
+022D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 233
+022E 90647B            MOV     DPTR,#0647BH
+0231 7452              MOV     A,#052H
+0233 F0                MOVX    @DPTR,A
+0234 906453            MOV     DPTR,#06453H
+0237 E4                CLR     A
+0238 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 234
+                                           ; SOURCE LINE # 235
+0239 020000      R     LJMP    ?C0002
+023C         ?C0040:
+                                           ; SOURCE LINE # 237
+023C 900000      E     MOV     DPTR,#MAG_I2C_mstrControl
+023F E0                MOVX    A,@DPTR
+0240 FF                MOV     R7,A
+0241 EF                MOV     A,R7
+0242 5402              ANL     A,#02H
+0244 FF                MOV     R7,A
+0245 7E00              MOV     R6,#00H
+0247 EF                MOV     A,R7
+0248 4E                ORL     A,R6
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 17  
+
+0249 601D              JZ      ?C0059
+                                           ; SOURCE LINE # 238
+                                           ; SOURCE LINE # 240
+024B 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+024E E0                MOVX    A,@DPTR
+024F FF                MOV     R7,A
+0250 EF                MOV     A,R7
+0251 449A              ORL     A,#09AH
+0253 FF                MOV     R7,A
+0254 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+0257 EF                MOV     A,R7
+0258 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 245
+0259 900000      E     MOV     DPTR,#MAG_I2C_state
+025C 7460              MOV     A,#060H
+025E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 246
+025F 9044C8            MOV     DPTR,#044C8H
+0262 7401              MOV     A,#01H
+0264 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 247
+0265 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 249
+0268         ?C0059:
+                                           ; SOURCE LINE # 250
+0268 90648B            MOV     DPTR,#0648BH
+026B E0                MOVX    A,@DPTR
+026C FF                MOV     R7,A
+026D EF                MOV     A,R7
+026E 4420              ORL     A,#020H
+0270 FF                MOV     R7,A
+0271 EF                MOV     A,R7
+0272 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 251
+0273 90647B            MOV     DPTR,#0647BH
+0276 7452              MOV     A,#052H
+0278 F0                MOVX    @DPTR,A
+0279 906453            MOV     DPTR,#06453H
+027C E4                CLR     A
+027D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 254
+027E 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+0281 E0                MOVX    A,@DPTR
+0282 FF                MOV     R7,A
+0283 EF                MOV     A,R7
+0284 4490              ORL     A,#090H
+0286 FF                MOV     R7,A
+0287 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+028A EF                MOV     A,R7
+028B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 256
+                                           ; SOURCE LINE # 258
+028C 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 260
+028F         ?C0063:
+                                           ; SOURCE LINE # 262
+028F 906403            MOV     DPTR,#06403H
+0292 E0                MOVX    A,@DPTR
+0293 FF                MOV     R7,A
+0294 900000      E     MOV     DPTR,#MAG_I2C_mstrRdBufPtr
+0297 120000      E     LCALL   ?C?PLDXDATA
+029A 900000      E     MOV     DPTR,#MAG_I2C_mstrRdBufIndex
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 18  
+
+029D E0                MOVX    A,@DPTR
+029E FE                MOV     R6,A
+029F E9                MOV     A,R1
+02A0 2E                ADD     A,R6
+02A1 F9                MOV     R1,A
+02A2 E4                CLR     A
+02A3 3A                ADDC    A,R2
+02A4 FA                MOV     R2,A
+02A5 EF                MOV     A,R7
+02A6 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 263
+02A9 900000      E     MOV     DPTR,#MAG_I2C_mstrRdBufIndex
+02AC E0                MOVX    A,@DPTR
+02AD 04                INC     A
+02AE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 266
+02AF 900000      E     MOV     DPTR,#MAG_I2C_mstrRdBufSize
+02B2 E0                MOVX    A,@DPTR
+02B3 FF                MOV     R7,A
+02B4 900000      E     MOV     DPTR,#MAG_I2C_mstrRdBufIndex
+02B7 E0                MOVX    A,@DPTR
+02B8 FE                MOV     R6,A
+02B9 EE                MOV     A,R6
+02BA C3                CLR     C
+02BB 9F                SUBB    A,R7
+02BC 500D              JNC     ?C0064
+                                           ; SOURCE LINE # 267
+                                           ; SOURCE LINE # 268
+02BE 90647B            MOV     DPTR,#0647BH
+02C1 7402              MOV     A,#02H
+02C3 F0                MOVX    @DPTR,A
+02C4 906453            MOV     DPTR,#06453H
+02C7 E4                CLR     A
+02C8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 269
+02C9 8048              SJMP    ?C0002
+02CB         ?C0064:
+                                           ; SOURCE LINE # 271
+02CB 900000      E     MOV     DPTR,#MAG_I2C_mstrControl
+02CE E0                MOVX    A,@DPTR
+02CF FF                MOV     R7,A
+02D0 EF                MOV     A,R7
+02D1 5402              ANL     A,#02H
+02D3 FF                MOV     R7,A
+02D4 7E00              MOV     R6,#00H
+02D6 EF                MOV     A,R7
+02D7 4E                ORL     A,R6
+02D8 601C              JZ      ?C0073
+                                           ; SOURCE LINE # 272
+                                           ; SOURCE LINE # 274
+02DA 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+02DD E0                MOVX    A,@DPTR
+02DE FF                MOV     R7,A
+02DF EF                MOV     A,R7
+02E0 4409              ORL     A,#09H
+02E2 FF                MOV     R7,A
+02E3 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+02E6 EF                MOV     A,R7
+02E7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 277
+02E8 900000      E     MOV     DPTR,#MAG_I2C_state
+02EB 7460              MOV     A,#060H
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 19  
+
+02ED F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 278
+02EE 9044C8            MOV     DPTR,#044C8H
+02F1 7401              MOV     A,#01H
+02F3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 279
+02F4 801D              SJMP    ?C0002
+                                           ; SOURCE LINE # 281
+02F6         ?C0073:
+                                           ; SOURCE LINE # 282
+02F6 90648B            MOV     DPTR,#0648BH
+02F9 E0                MOVX    A,@DPTR
+02FA FF                MOV     R7,A
+02FB EF                MOV     A,R7
+02FC 4420              ORL     A,#020H
+02FE FF                MOV     R7,A
+02FF EF                MOV     A,R7
+0300 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 283
+0301 90647B            MOV     DPTR,#0647BH
+0304 7412              MOV     A,#012H
+0306 F0                MOVX    @DPTR,A
+0307 906453            MOV     DPTR,#06453H
+030A E4                CLR     A
+030B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 284
+                                           ; SOURCE LINE # 285
+030C 8005              SJMP    ?C0002
+                                           ; SOURCE LINE # 287
+030E         ?C0077:
+                                           ; SOURCE LINE # 295
+030E 7F00              MOV     R7,#00H
+0310 120000      E     LCALL   _?CyHalt
+                                           ; SOURCE LINE # 298
+                                           ; SOURCE LINE # 299
+                                           ; SOURCE LINE # 300
+0313         ?C0002:
+                                           ; SOURCE LINE # 303
+0313 900000      R     MOV     DPTR,#tmpCsr
+0316 E0                MOVX    A,@DPTR
+0317 FF                MOV     R7,A
+0318 EF                MOV     A,R7
+0319 30E54C            JNB     ACC.5,?C0088
+                                           ; SOURCE LINE # 304
+                                           ; SOURCE LINE # 305
+031C 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+031F E0                MOVX    A,@DPTR
+0320 FF                MOV     R7,A
+0321 900000      E     MOV     DPTR,#MAG_I2C_state
+0324 E0                MOVX    A,@DPTR
+0325 FE                MOV     R6,A
+0326 EE                MOV     A,R6
+0327 5408              ANL     A,#08H
+0329 FE                MOV     R6,A
+032A EE                MOV     A,R6
+032B FD                MOV     R5,A
+032C 7C00              MOV     R4,#00H
+032E ED                MOV     A,R5
+032F 4C                ORL     A,R4
+0330 6004              JZ      ?C0080
+0332 7E01              MOV     R6,#01H
+0334 8002              SJMP    ?C0081
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 20  
+
+0336         ?C0080:
+0336 7E02              MOV     R6,#02H
+0338         ?C0081:
+0338 EF                MOV     A,R7
+0339 4E                ORL     A,R6
+033A FF                MOV     R7,A
+033B 900000      E     MOV     DPTR,#MAG_I2C_mstrStatus
+033E EF                MOV     A,R7
+033F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 307
+0340 90648B            MOV     DPTR,#0648BH
+0343 E0                MOVX    A,@DPTR
+0344 FF                MOV     R7,A
+0345 EF                MOV     A,R7
+0346 54DF              ANL     A,#0DFH
+0348 FF                MOV     R7,A
+0349 EF                MOV     A,R7
+034A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 308
+034B 900000      E     MOV     DPTR,#MAG_I2C_state
+034E 7410              MOV     A,#010H
+0350 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 309
+                                           ; SOURCE LINE # 311
+0351 8015              SJMP    ?C0088
+0353         ?C0001:
+                                           ; SOURCE LINE # 312
+0353 900000      E     MOV     DPTR,#MAG_I2C_state
+0356 E0                MOVX    A,@DPTR
+0357 FF                MOV     R7,A
+0358 EF                MOV     A,R7
+0359 5410              ANL     A,#010H
+035B FF                MOV     R7,A
+035C 7E00              MOV     R6,#00H
+035E EF                MOV     A,R7
+035F 4E                ORL     A,R6
+0360 7006              JNZ     ?C0088
+                                           ; SOURCE LINE # 313
+                                           ; SOURCE LINE # 502
+0362         ?C0086:
+                                           ; SOURCE LINE # 504
+                                           ; SOURCE LINE # 506
+0362 900000      E     MOV     DPTR,#MAG_I2C_state
+0365 7410              MOV     A,#010H
+0367 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 507
+                                           ; SOURCE LINE # 508
+0368         ?C0088:
+0368 D007              POP     AR7
+036A D006              POP     AR6
+036C D005              POP     AR5
+036E D004              POP     AR4
+0370 D003              POP     AR3
+0372 D002              POP     AR2
+0374 D001              POP     AR1
+0376 D000              POP     AR0
+0378 D0D0              POP     PSW
+037A D000        E     POP     ?C?XPAGE1SFR
+037C D086              POP     DPS
+037E D084              POP     DPL1
+0380 D085              POP     DPH1
+0382 D082              POP     DPL
+C51 COMPILER V9.51   MAG_I2C_INT                                                           05/28/2014 13:42:14 PAGE 21  
+
+0384 D083              POP     DPH
+0386 D0F0              POP     B
+0388 D0E0              POP     ACC
+038A 32                RETI    
+             ; FUNCTION MAG_I2C_ISR (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    907    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
